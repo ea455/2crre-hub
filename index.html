@@ -175,6 +175,10 @@
   .video-lightbox-close{ position:absolute; top:26px; right:32px; color:var(--white); font-family:'IBM Plex Mono',monospace; font-size:0.8rem; background:transparent; border:1px solid rgba(255,255,255,0.3); padding:8px 16px; border-radius:20px; cursor:pointer; }
   .video-lightbox-close:hover{ border-color:var(--green); color:var(--green); }
   .video-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:none; }
+  /* Google Drive's own player stacks a toolbar, the video and its controls. In a
+     16:9 box on a touch screen the controls get clipped off the bottom, so give
+     it a taller frame there. Desktop is unchanged. */
+  @media (max-width:760px), (hover:none){ .video-frame--drive{ aspect-ratio:1 / 0.95; } }
   .content-block{ font-size:1rem; color:var(--ink); max-width:680px; overflow-wrap:anywhere; }
   .content-block p{ margin-bottom:14px; }
   .steps-block{ margin:10px 0 22px; }
@@ -687,6 +691,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
+const BUILD_ID = '2026-10-09-C'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -892,7 +897,8 @@ async function loadDeleted(){
 
 function videoFrameHtml(embed){
   const canExpand = embed.trim().startsWith('<iframe');
-  return `<div class="video-frame">${embed}${canExpand ? '<button class="video-expand-btn" onclick="openVideoLightbox(this)">\u2922 Expand</button>' : ''}</div>`;
+  const isDrive = embed.indexOf('drive.google.com') !== -1;
+  return `<div class="video-frame${isDrive ? ' video-frame--drive' : ''}">${embed}${canExpand ? '<button class="video-expand-btn" onclick="openVideoLightbox(this)">\u2922 Expand</button>' : ''}</div>`;
 }
 
 function openVideoLightbox(btn){
@@ -941,44 +947,33 @@ function readAloudControlHtml(){
 // which are usually noticeably more natural. Prefer that specific voice,
 // then any other Google-branded English voice, then any local English
 // voice, in that order \u2014 never silently fall back to a non-English voice.
-// Apple ships a set of "novelty" voices alongside its real ones (Albert,
-// Zarvox, Bad News, etc. -- deliberately deep/weird/funny, meant as a joke,
-// never intended as a real reading voice). speechSynthesis.getVoices()
-// returns them mixed in with legitimate voices with no flag distinguishing
-// them, so without this list a naive "grab any English voice" fallback can
-// land on one of these instead of a normal voice.
-const NOVELTY_VOICE_NAMES = ['Albert','Bad News','Bahh','Bells','Boing','Bubbles','Cellos','Deranged','Wobble','Good News','Hysterical','Jester','Pipe Organ','Organ','Trinoids','Whisper','Zarvox','Fred','Junior','Kathy','Ralph','Princess','Superstar'];
+// ---------------------------------------------------------------------
+// Reading voice
+//
+// Rules, because a wrong voice here is unacceptable:
+//  1. The voice is ALWAYS chosen explicitly from an approved list. "No voice
+//     set" is never an option -- that hands the decision to the browser's own
+//     default, which on some Macs is Albert (an Apple novelty voice).
+//  2. It is judged against the browser's voice list AS IT IS AT THE MOMENT OF
+//     THE TAP -- never a remembered snapshot. Voice lists load late and in
+//     stages, so a snapshot taken at page load can be empty or incomplete, and
+//     remembering it is exactly what let Albert through.
+//  3. If no approved voice exists (even after waiting briefly for the list to
+//     load), we do not speak at all. Silence beats the wrong voice.
+// ---------------------------------------------------------------------
 
-// getVoices() unreliably returns an empty or incomplete list the first
-// time it's called after a page loads -- voice lists load asynchronously,
-// and the browser fires 'voiceschanged' once they're actually ready. Without
-// waiting for that, an early call can silently fall through to whatever
-// the browser's own default happens to be (which is how Albert -- an
-// explicitly-excluded novelty voice -- was getting picked on first play,
-// despite the exclusion list: the exclusion logic was sound, but it was
-// running against a voice list that hadn't populated yet).
-function ensureVoicesLoaded(){
-  return new Promise(resolve => {
-    const existing = window.speechSynthesis.getVoices();
-    if(existing.length){ resolve(existing); return; }
-    const handler = () => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handler);
-      resolve(window.speechSynthesis.getVoices());
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', handler);
-    // Fallback in case a browser never fires voiceschanged at all
-    setTimeout(() => {
-      window.speechSynthesis.removeEventListener('voiceschanged', handler);
-      resolve(window.speechSynthesis.getVoices());
-    }, 1000);
-  });
-}
+// Apple ships novelty and legacy voices (Albert, Zarvox, Bad News, Fred...)
+// mixed in with its real ones, with nothing flagging which is which. None of
+// these is ever acceptable as a reading voice.
+const NOVELTY_VOICE_NAMES = ['Albert','Bad News','Bahh','Bells','Boing','Bubbles','Cellos','Deranged','Wobble','Good News','Hysterical','Jester','Pipe Organ','Organ','Trinoids','Whisper','Zarvox','Fred','Junior','Kathy','Ralph','Princess','Superstar','Agnes','Bruce','Vicki','Victoria'];
+const NOVELTY_VOICE_SET = new Set(NOVELTY_VOICE_NAMES.map(n => n.toLowerCase()));
+// Some platforms append a note to the name ("Fred (English (US))"), so compare
+// only the part before the first " (".
+function baseVoiceName_(v){ return String((v && v.name) || '').split(' (')[0].trim().toLowerCase(); }
 
-// Each preferred voice gets its own tested rate/pitch rather than one
-// global setting for everyone -- Chrome's "Google US English" and Safari's
-// "Samantha" are different voices with different natural pacing, so the
-// same numbers don't transfer between them. Checked in order; first match
-// wins.
+// Each preferred voice gets its own tested rate/pitch rather than one global
+// setting -- Chrome's "Google US English" and Safari's "Samantha" have
+// different natural pacing. Checked in order; first match wins.
 const VOICE_PROFILES = [
   { match: v => v.name === 'Google US English', rate: 1.1, pitch: 1 },
   { match: v => v.name.includes('Google') && v.lang === 'en-US', rate: 1.1, pitch: 1 },
@@ -987,27 +982,53 @@ const VOICE_PROFILES = [
 ];
 const DEFAULT_VOICE_SETTINGS = { rate: 1.1, pitch: 1 };
 
-// Kicked off immediately at page load, not on first tap of Read Aloud.
-// iOS Safari requires speechSynthesis.speak() to happen essentially
-// synchronously within the user's tap, or it silently drops the actual
-// audio while still firing every JS event (onboundary, onend) as if
-// nothing went wrong -- which is exactly why word-highlighting can work
-// while no sound plays. Starting this here means that by the time anyone
-// actually taps the button, voices are already loaded, so awaiting an
-// already-settled promise costs one microtask, not up to a full second
-// waiting on 'voiceschanged' -- the difference between "still counts as
-// the same gesture" and "iOS decided it doesn't."
-const voicesReadyPromise = ensureVoicesLoaded();
+function currentVoices_(){
+  try{ return window.speechSynthesis.getVoices() || []; }catch(e){ return []; }
+}
 
-async function pickBestVoiceAndSettings(){
-  const voices = await voicesReadyPromise;
-  const englishVoices = voices.filter(v => v.lang.toLowerCase().startsWith('en') && !NOVELTY_VOICE_NAMES.includes(v.name));
-  if(!englishVoices.length) return { voice: null, ...DEFAULT_VOICE_SETTINGS };
+// Returns { voice, rate, pitch } for the best approved voice in `voices`,
+// or null if there is none.
+function chooseVoiceFrom_(voices){
+  const english = voices.filter(v =>
+    String(v.lang || '').toLowerCase().startsWith('en') && !NOVELTY_VOICE_SET.has(baseVoiceName_(v)));
+  if(!english.length) return null;
   for(const profile of VOICE_PROFILES){
-    const found = englishVoices.find(profile.match);
+    const found = english.find(profile.match);
     if(found) return { voice: found, rate: profile.rate, pitch: profile.pitch };
   }
-  return { voice: englishVoices[0], ...DEFAULT_VOICE_SETTINGS };
+  return { voice: english[0], ...DEFAULT_VOICE_SETTINGS };
+}
+
+// Chrome only starts building its voice list once something asks for it, so
+// ask now, at page load, to have it ready by the time anyone taps Read Aloud.
+// This only warms it up -- the answer is deliberately NOT remembered.
+currentVoices_();
+
+async function pickBestVoiceAndSettings(){
+  // Normal case: an approved voice is already available. No waiting at all,
+  // so the tap and speak() stay together (which matters on iPhone).
+  let choice = chooseVoiceFrom_(currentVoices_());
+  if(choice) return choice;
+
+  // Not there yet. Wait for the list to finish loading, re-checking whenever
+  // the browser says it changed and on a short poll (some browsers never fire
+  // the event). Gives up after 3 seconds.
+  const deadline = Date.now() + 3000;
+  while(!choice && Date.now() < deadline){
+    await new Promise(resolve => {
+      let finished = false;
+      const done = () => {
+        if(finished) return;
+        finished = true;
+        try{ window.speechSynthesis.removeEventListener('voiceschanged', done); }catch(e){}
+        resolve();
+      };
+      try{ window.speechSynthesis.addEventListener('voiceschanged', done); }catch(e){}
+      setTimeout(done, 250);
+    });
+    choice = chooseVoiceFrom_(currentVoices_());
+  }
+  return choice; // null means "no approved voice": the caller must NOT speak
 }
 
 // Daily Cheat Sheet content lives in the Sheet, as two special rows
@@ -1099,10 +1120,18 @@ async function toggleReadAloud(){
 
   const utter = new SpeechSynthesisUtterance(plainText);
   utter.lang = 'en-US';
-  const { voice, rate, pitch } = await pickBestVoiceAndSettings();
+  const picked = await pickBestVoiceAndSettings();
+  if(!picked){
+    // No approved voice on this device (or its list never loaded).
+    // Staying silent is the rule; a wrong voice is not an option.
+    label.textContent = 'No voice available on this device';
+    setTimeout(() => { if(!ttsState.playing) label.textContent = 'Read aloud'; }, 4000);
+    return;
+  }
+  const { voice, rate, pitch } = picked;
   utter.rate = rate;
   utter.pitch = pitch;
-  if(voice) utter.voice = voice;
+  utter.voice = voice; // always explicit
   label.textContent = 'Stop reading';
 
   // Map character offsets in the plain-text version back to each word's
@@ -1753,7 +1782,7 @@ function renderTopicPage(id){
 function renderAdmin(){
   const main = document.getElementById('main');
   main.innerHTML = `
-    <div class="admin-banner">Admin mode \u2014 changes here save directly to the 2CRRE Tech Fundamentals Google Sheet and are live for every agent immediately.</div>
+    <div class="admin-banner">Admin mode \u2014 changes here save directly to the 2CRRE Tech Fundamentals Google Sheet and are live for every agent immediately. <span class="mono" style="opacity:0.7;">Build ${BUILD_ID}</span></div>
     <div style="display:flex; gap:10px; align-items:center; margin-top:16px;">
       <button class="add-topic-btn" id="addTopicBtn">+ Add New Topic</button>
       <button class="admin-btn" id="agentProgressBtn">Agent Progress</button>
