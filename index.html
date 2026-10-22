@@ -408,6 +408,53 @@
     font:inherit; font-size:0.85rem; font-weight:600; color:var(--black);
     background:var(--green); border:none; border-radius:20px; padding:9px 20px; cursor:pointer;
   }
+  /* ---- New / Updated flags ---- */
+  .topic-card{ position:relative; }
+  .flag-tag{ position:absolute; top:14px; right:16px; z-index:3; font:700 10px 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; padding:5px 11px; border-radius:999px; }
+  .flag-tag.new{ background:linear-gradient(135deg,#f6d77e,#dfae30); color:#2c1f00; box-shadow:0 0 0 1px rgba(255,214,102,.45), 0 6px 20px rgba(223,174,48,.38); }
+  .flag-tag.updated{ background:rgba(230,181,60,.14); color:#f3cf63; border:1px solid rgba(230,181,60,.65); }
+  .topic-card.flagged{ border-color:rgba(230,181,60,.55) !important; box-shadow:0 0 0 1px rgba(230,181,60,.35), 0 16px 38px rgba(223,174,48,.10); }
+  .whatsnew-banner{ margin:22px 0 0; padding:13px 16px; border-radius:12px; background:rgba(230,181,60,.10); border:1px solid rgba(230,181,60,.45); color:#f3dc9a; font-size:.9rem; line-height:1.5; }
+  .whatsnew-banner b{ color:#ffe9a8; }
+  .flag-callout{ margin:0 0 24px; display:flex; gap:14px; align-items:flex-start; padding:14px 16px; border-radius:12px; background:rgba(230,181,60,.10); border:1px solid rgba(230,181,60,.45); max-width:680px; }
+  .flag-callout .flag-tag{ position:static; flex:0 0 auto; margin-top:1px; }
+  .flag-callout .fc-text{ color:var(--ink); font-size:.92rem; line-height:1.5; }
+  .flag-callout .fc-text b{ color:#ffe9a8; }
+  .flag-callout .fc-hint{ color:var(--ink-muted); font-size:.84rem; margin-top:4px; }
+
+  /* ---- Quiz ---- */
+  .quiz-block{ margin:44px 0 8px; max-width:760px; padding:26px 26px 12px; border:1px solid var(--line-strong); border-radius:16px; background:rgba(0,0,0,0.14); transition:border-color .2s; }
+  .quiz-block.complete{ border-color:rgba(122,185,66,.65); }
+  .quiz-block.pulse{ animation:quizPulse 1.2s ease 2; }
+  @keyframes quizPulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(229,72,77,0); } 50%{ box-shadow:0 0 0 6px rgba(229,72,77,.35); } }
+  .quiz-head{ display:flex; justify-content:space-between; align-items:baseline; gap:12px; flex-wrap:wrap; }
+  .quiz-eyebrow{ font-family:'IBM Plex Mono',monospace; font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--green); }
+  .quiz-count{ font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--ink-muted); }
+  .quiz-block.complete .quiz-count{ color:var(--green); font-weight:600; }
+  .quiz-intro{ font-size:.88rem; color:var(--ink-muted); margin:8px 0 18px; }
+  .quiz-q{ padding:18px 0; border-top:1px solid var(--line); }
+  .quiz-q-text{ font-size:1.02rem; line-height:1.5; color:var(--ink); display:flex; gap:12px; }
+  .quiz-q-num{ flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--green); padding-top:4px; }
+  .quiz-options{ display:grid; gap:10px; margin-top:14px; }
+  .quiz-opt{ display:flex; gap:12px; align-items:flex-start; text-align:left; width:100%; padding:12px 14px; border-radius:12px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.04); color:var(--ink); font:inherit; font-size:.94rem; line-height:1.45; cursor:pointer; transition:background .15s, border-color .15s, opacity .15s; }
+  .quiz-opt:hover:not(:disabled){ background:rgba(255,255,255,0.09); border-color:var(--green); }
+  .quiz-opt:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+  .quiz-letter{ flex:0 0 auto; font-family:'IBM Plex Mono',monospace; font-size:.74rem; color:var(--ink-faint); padding-top:2px; }
+  .quiz-opt.wrong{ background:rgba(229,72,77,.14); border-color:rgba(229,72,77,.65); color:#ffb7ba; cursor:not-allowed; animation:quizShake .35s ease; }
+  .quiz-opt.wrong .quiz-opt-text{ text-decoration:line-through; text-decoration-color:rgba(229,72,77,.8); }
+  .quiz-opt.correct{ background:rgba(122,185,66,.18); border-color:var(--green); color:#fff; cursor:default; }
+  .quiz-opt.correct .quiz-letter{ color:var(--green); }
+  .quiz-opt.dim{ opacity:.42; cursor:default; }
+  @keyframes quizShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
+  @media (prefers-reduced-motion: reduce){ .quiz-opt.wrong, .quiz-block.pulse{ animation:none; } }
+  @media (max-width:600px){ .quiz-block{ padding:20px 16px 6px; } }
+
+  .toast{ position:fixed; left:50%; bottom:96px; transform:translate(-50%,16px); z-index:900;
+    max-width:min(92vw,420px); background:#0a4249; color:var(--ink); border:1px solid var(--line-strong);
+    border-radius:12px; padding:12px 16px; font-size:0.9rem; line-height:1.45; text-align:center;
+    box-shadow:0 12px 30px rgba(0,0,0,0.4); opacity:0; pointer-events:none;
+    transition:opacity 0.25s ease, transform 0.25s ease; }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
   .signin-gate .sg-title{ font-family:'Fraunces',serif; font-size:1.8rem; color:var(--ink); max-width:420px; }
   .signin-gate .sg-sub{ color:var(--ink-muted); font-size:0.95rem; max-width:380px; margin-bottom:6px; }
   .signin-gate .sg-error{ color:#e8877a; font-size:0.85rem; max-width:380px; }
@@ -499,6 +546,7 @@ document.getElementById('brandLogoBtn').addEventListener('click', () => renderDi
 document.getElementById('headerWebinarsBtn').addEventListener('click', () => renderWebinarsPage());
 document.getElementById('headerSupportBtn').addEventListener('click', () => renderTopicPage('SUPPORT'));
 let progress = {};
+let completedAt = {}; // lesson id -> the Date this person completed (or last reviewed) it
 
 // Platform-specific tracks: each is its own guided sequence, independent from
 // the general category directory and independent from each other.
@@ -579,17 +627,24 @@ function recomputeDerivedTracks(){
 
 let currentAgent = null; // { email, name, idToken } once signed in
 
+class AuthRequiredError extends Error {}
+function sessionParam_(){ return currentAgent ? encodeURIComponent(currentAgent.idToken) : ''; }
+
 async function loadProgress(){
   if(!currentAgent) return;
-  try{
-    const res = await fetch(APPS_SCRIPT_URL + '?action=progress&email=' + encodeURIComponent(currentAgent.email));
-    const data = await res.json();
-    progress = {};
-    (data.completed || []).forEach(id => { progress[id] = true; });
-  }catch(e){ console.error('Could not load progress', e); }
+  const res = await fetch(APPS_SCRIPT_URL + '?action=progress&session=' + sessionParam_());
+  const data = await res.json();
+  if(data && data.authRequired){
+    requireSignInAgain_('Please sign in to continue.');
+    throw new AuthRequiredError();
+  }
+  if(!(data && data.ok)) throw new Error((data && data.error) || 'Your progress could not be loaded');
+  progress = {};
+  completedAt = {};
+  (data.completed || []).forEach(id => { progress[id] = true; });
+  Object.keys(data.dates || {}).forEach(id => { const d = new Date(data.dates[id]); if(!isNaN(d)) completedAt[id] = d; });
   updateGlobalProgress();
 }
-
 // Updates the sleek progress bar under the header \u2014 reflects completed
 // topics out of the full set, regardless of which page is currently shown.
 // Small celebratory burst on every fresh topic completion \u2014 fires from wherever the button that triggered it actually sits, so it
@@ -640,68 +695,105 @@ let lastKnownDone = null;
 function updateGlobalProgress(){
   const fill = document.getElementById('globalProgressFill');
   const label = document.getElementById('globalProgressLabel');
-  if(!fill || !label || !TOPICS.length) return;
-  const done = TOPICS.filter(t => progress[t.ID]).length;
-  const total = TOPICS.length;
+  if(!fill || !label || !SEQUENCE.length) return;
+  // Count lessons (SEQUENCE), not every row in the Sheet -- the two Cheat Sheet
+  // rows live in TOPICS but are not lessons, which made this read "of 47" while
+  // the rest of the app (and the weekly emails) say 45.
+  const done = SEQUENCE.filter(t => progress[t.ID]).length;
+  const total = SEQUENCE.length;
   const pct = Math.round((done / total) * 100);
   fill.style.width = pct + '%';
   const from = lastKnownDone === null ? done : lastKnownDone;
   lastKnownDone = done;
-  if(from === done){ label.textContent = `${done} / ${total} complete`; return; }
+  if(from === done){ label.textContent = `${done} / ${total} lessons complete`; return; }
   const start = performance.now();
   const duration = 500;
   function step(now){
     const t = Math.min((now - start) / duration, 1);
     const eased = 1 - Math.pow(1 - t, 3);
     const current = Math.round(from + (done - from) * eased);
-    label.textContent = `${current} / ${total} complete`;
+    label.textContent = `${current} / ${total} lessons complete`;
     if(t < 1) requestAnimationFrame(step);
   }
   requestAnimationFrame(step);
 }
 
-// Marks (or unmarks) a single topic, sending the agent's Google ID token so the
-// backend verifies who's actually calling rather than trusting a claimed email.
-async function saveProgress(topicId, completed){
+// Marks (or unmarks) a single topic. The backend verifies who is calling from the
+// signed session we send, rather than trusting a claimed email. Returns true only
+// if the save really reached the server; otherwise it tells the person why.
+let pendingSave_ = null; // a save waiting for the agent to sign in again
+
+function isSessionProblem_(msg){
+  return /expired|invalid|sign-in|sign in|session|missing/i.test(String(msg || ''));
+}
+
+async function saveProgress(topicId, completed, extra){
   const previous = progress[topicId];
   progress[topicId] = completed || undefined;
   updateGlobalProgress();
-  if(!currentAgent) return; // visual state above still updates even without an agent to persist against
+  if(!currentAgent) return true; // nobody signed in to save for (the local preview copy)
+  let data = null;
   try{
     const resp = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action: 'markProgress', idToken: currentAgent.idToken, topicId, completed: !!completed })
+      body: JSON.stringify(Object.assign({ action: 'markProgress', idToken: currentAgent.idToken, topicId, completed: !!completed }, extra || {}))
     });
-    const data = await resp.json();
-    if(!data.ok){
-      // The backend rejected the write (expired token, etc.) -- don't leave
-      // the agent thinking it saved when it didn't.
-      console.error('Progress save rejected by backend:', data.error);
-      progress[topicId] = previous;
-      updateGlobalProgress();
-    }
+    data = await resp.json();
   }catch(e){
     console.error('Could not save progress', e);
     progress[topicId] = previous;
     updateGlobalProgress();
+    showToast_('We couldn\u2019t save your progress. Check your connection and try again.');
+    return false;
   }
+  if(data && data.ok){ if(completed && !previous) completedAt[topicId] = new Date(); return true; }
+
+  console.error('Progress save rejected by backend:', data && data.error);
+  progress[topicId] = previous;
+  updateGlobalProgress();
+  if(isSessionProblem_(data && data.error)){
+    // The session ended. Keep what they just did, sign in again, then save it.
+    pendingSave_ = { topicId, completed: !!completed, email: currentAgent.email };
+    requireSignInAgain_('Your session has ended. Please sign in again and your progress will be saved.');
+  } else {
+    showToast_('We couldn\u2019t save your progress. Please try again.');
+  }
+  return false;
 }
+
+let toastTimer_ = null;
+function showToast_(msg){
+  let el = document.getElementById('toast');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'toast';
+    el.className = 'toast';
+    el.setAttribute('role', 'status');
+    document.body.appendChild(el);
+  }
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer_);
+  toastTimer_ = setTimeout(() => el.classList.remove('show'), 4500);
+}
+
 function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-09-C'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-21-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
 // Live as of go-live: real Client ID from Google Cloud Console, authorized
 // for the https://ea455.github.io origin (GitHub Pages).
-// TODO: switch this to true once content review is done and the Hub is ready
-// for real agents. While false, every card in the grid stays clickable \u2014
-// no locking, so you can review everything freely. When true, cards past the
-// first incomplete topic in SEQUENCE (category order) lock until reached.
-const LOCK_ENABLED = false;
+// Sequential learning: the first lesson is open and each later one unlocks when the
+// one before it is completed. Once every lesson is done nothing is locked, so
+// finished agents can revisit anything. (Cards past the first incomplete lesson
+// in SEQUENCE order are the locked ones.) The local PREVIEW copy turns this off
+// so reviewers can open any lesson.
+const LOCK_ENABLED = true;
 
 const SIGNIN_ENABLED = true;
 const GOOGLE_CLIENT_ID = '289019281293-b4v3edbfbdg6u8h36vk3fpt8po3bf3sm.apps.googleusercontent.com';
@@ -760,12 +852,30 @@ document.getElementById('loadingRetryBtn').addEventListener('click', () => {
   startApp();
 });
 
-function handleGoogleCredential_(response){
-  const payload = decodeJwtPayload_(response.credential);
-  currentAgent = { email: payload.email, name: payload.name || payload.email, idToken: response.credential };
-  localStorage.setItem('2crre-agent', JSON.stringify(currentAgent));
+async function handleGoogleCredential_(response){
+  showSigninError_('');
   document.getElementById('signinGate').classList.add('hidden');
   showLoadingScreen_();
+  let result = null;
+  try{
+    const res = await fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'startSession', idToken: response.credential })
+    });
+    result = await res.json();
+  }catch(e){
+    result = { ok: false, error: 'Could not reach the server. Check your connection and try again.' };
+  }
+  if(!result || !result.ok){
+    // Not let in: not a 2CRRE account, or Google's sign-in couldn't be verified.
+    document.getElementById('loadingScreen').classList.add('hidden');
+    document.getElementById('signinGate').classList.remove('hidden');
+    showSigninError_((result && result.error) || 'Could not sign you in. Please try again.');
+    return;
+  }
+  currentAgent = { email: result.email, name: result.name, idToken: result.session, expiresAt: result.expiresAt, admin: !!result.admin };
+  sessionStorage.setItem('2crre-agent', JSON.stringify(currentAgent));
   startApp();
 }
 
@@ -773,36 +883,67 @@ function showSigninError_(msg){
   document.getElementById('signinError').textContent = msg;
 }
 
-function initSignIn(){
-  const saved = localStorage.getItem('2crre-agent');
-  if(saved){
-    try{
-      currentAgent = JSON.parse(saved);
-      document.getElementById('signinGate').classList.add('hidden');
-      showLoadingScreen_();
-      startApp();
-      return;
-    }catch(e){ localStorage.removeItem('2crre-agent'); }
-  }
+// Whether Google's sign-in button has been set up on this page yet.
+let googleSignInReady_ = false;
+function setupGoogleSignIn_(){
   if(typeof google === 'undefined' || !google.accounts){
-    bootstrapSignIn(0); // Google's script hasn't loaded yet \u2014 wait for it, then retry
+    bootstrapSignIn(0); // Google's script hasn't loaded yet, wait for it, then retry
     return;
   }
+  if(googleSignInReady_) return;
+  googleSignInReady_ = true;
   google.accounts.id.initialize({
     client_id: GOOGLE_CLIENT_ID,
     callback: handleGoogleCredential_
-    // No 'hd' hint here on purpose: the real domain check (all three
-    // 2CRRE company domains) happens server-side in Code.gs via
-    // ALLOWED_DOMAINS. Restricting 'hd' to one domain here would narrow
-    // or block Google's own sign-in prompt for the other two before
-    // that server-side check ever runs.
+    // No 'hd' hint on purpose: the real domain check (all three 2CRRE company
+    // domains) happens on the server when the session starts (startSession in
+    // Code.gs). Restricting 'hd' here would narrow Google's own prompt to one domain.
   });
   google.accounts.id.renderButton(document.getElementById('googleSignInButton'), { theme: 'outline', size: 'large', text: 'signin_with' });
   google.accounts.id.prompt(); // offers silent one-tap sign-in if there's already an active Google session
 }
 
+function initSignIn(){
+  try{ localStorage.removeItem('2crre-agent'); }catch(e){} // older versions kept the login for good; now it lasts one visit
+  const saved = sessionStorage.getItem('2crre-agent');
+  if(saved){
+    try{
+      const s = JSON.parse(saved);
+      // Only a current session can save progress. Anything else (an older sign-in
+      // holding a Google token that expired long ago, or a session past its date)
+      // sends the agent back to sign in once, instead of silently failing to save.
+      const current = s && typeof s.idToken === 'string' && s.idToken.indexOf('s1.') === 0 && s.expiresAt && Date.now() < s.expiresAt - 60000;
+      if(current){
+        currentAgent = s;
+        document.getElementById('signinGate').classList.add('hidden');
+        showLoadingScreen_();
+        startApp();
+        return;
+      }
+    }catch(e){ /* fall through to a fresh sign-in */ }
+    sessionStorage.removeItem('2crre-agent'); try{ localStorage.removeItem('2crre-agent'); }catch(e){}
+  }
+  setupGoogleSignIn_();
+}
+
+// Only admins get the Admin button (the server checks again on every admin action).
+function applyAdminVisibility_(){
+  const btn = document.getElementById('adminToggle');
+  if(btn) btn.style.display = (currentAgent && currentAgent.admin) ? '' : 'none';
+}
+
+// The session ended mid-use: clear it and show the sign-in screen with the reason.
+function requireSignInAgain_(msg){
+  sessionStorage.removeItem('2crre-agent'); try{ localStorage.removeItem('2crre-agent'); }catch(e){}
+  currentAgent = null;
+  document.getElementById('loadingScreen').classList.add('hidden');
+  document.getElementById('signinGate').classList.remove('hidden');
+  showSigninError_(msg);
+  setupGoogleSignIn_();
+}
+
 function signOutAgent(){
-  localStorage.removeItem('2crre-agent');
+  sessionStorage.removeItem('2crre-agent'); try{ localStorage.removeItem('2crre-agent'); }catch(e){}
   location.reload();
 }
 
@@ -812,21 +953,22 @@ function signOutAgent(){
 // source of truth; every admin write re-fetches afterward so the app always
 // reflects exactly what's in the sheet, even if someone edited it directly.
 async function loadTopicsFromSheet(){
-  try{
-    const res = await fetch(APPS_SCRIPT_URL);
-    const data = await res.json();
-    if(data.ok && Array.isArray(data.topics)){
-      TOPICS.length = 0;
-      data.topics.forEach(t => TOPICS.push({ ...t, Order: Number(t.Order) || 0 }));
-    } else {
-      console.error('Sheet returned an error', data);
-    }
-  }catch(e){
-    console.error('Could not reach the Apps Script backend', e);
+  const res = await fetch(APPS_SCRIPT_URL + '?session=' + sessionParam_());
+  const data = await res.json();
+  if(data && data.authRequired){
+    requireSignInAgain_('Please sign in to continue.');
+    throw new AuthRequiredError();
   }
+  if(!(data && data.ok && Array.isArray(data.topics))) throw new Error((data && data.error) || 'The lessons could not be loaded');
+  TOPICS.length = 0;
+  data.topics.forEach(t => TOPICS.push({ ...t, Order: Number(t.Order) || 0 }));
   recomputeDerivedTracks();
 }
-
+// After an Admin edit: refresh the lessons, and say so (never silently) if that fails.
+async function reloadTopics_(){
+  try{ await loadTopicsFromSheet(); }
+  catch(e){ if(!(e instanceof AuthRequiredError)) showAdminToast('Saved, but the list could not refresh. Reload the page.', true); }
+}
 // POSTs use text/plain on purpose \u2014 a Content-Type of application/json would
 // trigger a CORS preflight (OPTIONS) request, which Apps Script web apps don't
 // handle. doPost() on the backend JSON.parses e.postData.contents itself.
@@ -844,32 +986,32 @@ async function postToSheet(payload){
   }
 }
 async function saveOverride(topic){
+  // Send only what the form actually edits. The server keeps every other column
+  // (Broker Insight, Card Summary, links...) exactly as it is in the Sheet.
   const clean = {};
-  ['ID','Topic','Page Content','Video Links','Quick Check','Source','Status','Category','Platform','Order'].forEach(k => {
-    clean[k] = topic[k] !== undefined ? topic[k] : '';
-  });
+  Object.keys(topic).forEach(k => { if(!k.startsWith('__')) clean[k] = topic[k]; });
   const result = await postToSheet({ action: 'save', topic: clean, idToken: currentAgent ? currentAgent.idToken : null });
   if(!result.ok){ console.error('Save failed', result.error); showAdminToast('Could not save \u2014 ' + (result.error || 'unknown error'), true); }
   else { showAdminToast('Saved'); }
-  await loadTopicsFromSheet();
+  await reloadTopics_();
 }
 async function deleteOverride(id){
   const result = await postToSheet({ action: 'delete', id, idToken: currentAgent ? currentAgent.idToken : null });
   if(!result.ok){ console.error('Delete failed', result.error); showAdminToast('Could not delete \u2014 ' + (result.error || 'unknown error'), true); }
   else { showAdminToast('Deleted'); }
-  await loadTopicsFromSheet();
+  await reloadTopics_();
 }
 async function restoreDeleted(id){
   const result = await postToSheet({ action: 'restore', id, idToken: currentAgent ? currentAgent.idToken : null });
   if(!result.ok){ console.error('Restore failed', result.error); showAdminToast('Could not restore \u2014 ' + (result.error || 'unknown error'), true); }
   else { showAdminToast('Restored'); }
-  await loadTopicsFromSheet();
+  await reloadTopics_();
 }
 async function reorderTopics(updates){
   const result = await postToSheet({ action: 'reorder', updates, idToken: currentAgent ? currentAgent.idToken : null });
   if(!result.ok){ console.error('Reorder failed', result.error); showAdminToast('Could not save new order \u2014 ' + (result.error || 'unknown error'), true); }
   else { showAdminToast('Order saved'); }
-  await loadTopicsFromSheet();
+  await reloadTopics_();
 }
 let adminToastTimer = null;
 function showAdminToast(message, isError){
@@ -888,7 +1030,7 @@ function showAdminToast(message, isError){
 }
 async function loadDeleted(){
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?deleted=1');
+    const res = await fetch(APPS_SCRIPT_URL + '?deleted=1&session=' + sessionParam_());
     const data = await res.json();
     if(data.ok && Array.isArray(data.topics)) return data.topics.map(t => t.ID);
   }catch(e){ console.error(e); }
@@ -1441,6 +1583,80 @@ function parseQuizzes(text){
   return text.split(/\n?===\n?/).map(chunk => parseQuiz(chunk.trim())).filter(Boolean);
 }
 
+// ---------------- NEW / UPDATED flags ----------------
+const FLAG_FADE_DAYS = 30;
+function flagDateOf_(t){
+  if(!t['Flag Date']) return null;
+  const d = new Date(t['Flag Date']);
+  return isNaN(d) ? null : d;
+}
+// null, 'new' or 'updated' for THIS person.
+//  - New: until they complete the lesson.
+//  - Updated: only for a lesson they completed BEFORE the Flag Date; it goes away once
+//    they complete (review) it again after that date. Not-yet-done lessons need no tag.
+function flagStatus_(t){
+  const flag = String(t['Flag'] || '').trim().toLowerCase();
+  if(flag !== 'new' && flag !== 'updated') return null;
+  const fd = flagDateOf_(t);
+  if(!fd || Date.now() - fd.getTime() > FLAG_FADE_DAYS * 864e5) return null;
+  if(flag === 'new') return progress[t.ID] ? null : 'new';
+  const done = completedAt[t.ID];
+  return (progress[t.ID] && (!done || done < fd)) ? 'updated' : null;
+}
+function fmtDate_(d){ return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }); }
+function flagTagHtml_(t){
+  const st = flagStatus_(t);
+  return st ? `<span class="flag-tag ${st}">${st === 'new' ? 'New' : 'Updated'}</span>` : '';
+}
+function flagCalloutHtml_(t, st){
+  const fd = flagDateOf_(t);
+  const note = String(t['Change Note'] || '').trim();
+  return `<div class="flag-callout"><span class="flag-tag ${st}">${st === 'new' ? 'New' : 'Updated'}</span>
+    <div class="fc-text"><b>${st === 'new' ? 'New lesson' : 'This lesson was updated'}${fd ? ' \u00b7 ' + fmtDate_(fd) : ''}</b>${note ? `<div>${escapeHtml(note)}</div>` : ''}${st === 'updated' ? '<div class="fc-hint">Read it again, then press \u201cMark as reviewed\u201d at the bottom.</div>' : ''}</div></div>`;
+}
+function renderWhatsNewBanner_(q){
+  const old = document.getElementById('whatsNewBanner');
+  if(old) old.remove();
+  if(q) return;
+  const nNew = SEQUENCE.filter(t => flagStatus_(t) === 'new').length;
+  const nUpd = SEQUENCE.filter(t => flagStatus_(t) === 'updated').length;
+  if(!nNew && !nUpd) return;
+  const parts = [];
+  if(nNew) parts.push(`<b>${nNew}</b> new lesson${nNew === 1 ? '' : 's'}`);
+  if(nUpd) parts.push(`<b>${nUpd}</b> updated lesson${nUpd === 1 ? '' : 's'} to review`);
+  const b = document.createElement('div');
+  b.id = 'whatsNewBanner'; b.className = 'whatsnew-banner';
+  b.innerHTML = `\u2728 What\u2019s new for you: ${parts.join(' and ')}. Look for the gold tags below.`;
+  const catList = document.getElementById('categoryList');
+  catList.parentNode.insertBefore(b, catList);
+}
+
+// ---------------- QUIZ ----------------
+function shuffled_(arr){
+  const a = arr.slice();
+  for(let i = a.length - 1; i > 0; i--){ const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+// A question the person could never finish (no correct option, or fewer than two) is
+// dropped, so a typo in the Sheet can never trap someone behind a quiz.
+function usableQuizzes_(text){
+  return parseQuizzes(text || '').filter(q => q.options.length >= 2 && q.options.some(o => o.correct));
+}
+function renderQuizHtml_(list){
+  return `
+    <section class="quiz-block" id="quizBlock" aria-label="Check your understanding">
+      <div class="quiz-head"><span class="quiz-eyebrow">Check your understanding</span><span class="quiz-count" id="quizCount" aria-live="polite">0 of ${list.length} correct</span></div>
+      <p class="quiz-intro">Answer every question correctly to complete this lesson. A wrong pick turns red and is crossed out, so try another.</p>
+      ${list.map((q, qi) => `
+        <div class="quiz-q" data-q="${qi}">
+          <div class="quiz-q-text"><span class="quiz-q-num">${qi + 1}</span><span>${escapeHtml(q.question)}</span></div>
+          <div class="quiz-options">
+            ${shuffled_(q.options.map((o, oi) => ({ o, oi }))).map((x, pos) => `<button type="button" class="quiz-opt" data-q="${qi}" data-o="${x.oi}"><span class="quiz-letter">${'ABCD'[pos]}</span><span class="quiz-opt-text">${escapeHtml(x.o.text)}</span></button>`).join('')}
+          </div>
+        </div>`).join('')}
+    </section>`;
+}
+
 function iconFor(label){
   if(/contact|crm|tag/i.test(label)) return '\u{1F465}';
   if(/deal|transaction|document/i.test(label)) return '\u{1F4C4}';
@@ -1546,11 +1762,17 @@ function renderWebinarsPage(){
 
 // Called when a locked card is clicked \u2014 scrolls to and pulses the one card
 // that's actually next in line, so it's obvious what needs to happen first.
+function lockFrontier_(){
+  let f = -1;
+  SEQUENCE.forEach((t, i) => { if(progress[t.ID]) f = i; });
+  return f;
+}
+
 function guideToNextUnlockedCard(){
-  const firstIncompleteIndex = SEQUENCE.findIndex(t => !progress[t.ID]);
-  if(firstIncompleteIndex === -1) return;
-  const targetId = SEQUENCE[firstIncompleteIndex].ID;
-  const cardEl = document.querySelector(`.topic-card[data-id="${targetId}"]`);
+  const target = SEQUENCE[lockFrontier_() + 1];
+  if(!target) return;
+  showToast_('This lesson unlocks after \u201c' + target.Topic + '\u201d. Finish that one first.');
+  const cardEl = document.querySelector(`.topic-card[data-id="${target.ID}"]`);
   if(!cardEl) return;
   cardEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
   cardEl.classList.add('guide-pulse-card');
@@ -1577,15 +1799,18 @@ function renderResults(filterText){
   };
 
   // Locking is global across the whole grid, in SEQUENCE (category) order \u2014
-  // never applied while searching, since a filtered view shouldn't gate access.
-  const firstIncompleteIndex = SEQUENCE.findIndex(t => !progress[t.ID]);
+  // It applies while searching too, otherwise search would be a way to skip ahead.
+  // Everything up to ONE lesson past the furthest lesson you've completed is open, so
+  // a lesson added earlier in the order is open too but never pushes anyone back.
+  const frontier = lockFrontier_();
   const isLocked = t => {
-    if(!LOCK_ENABLED || q || firstIncompleteIndex === -1 || progress[t.ID]) return false;
-    return SEQUENCE.findIndex(s => s.ID === t.ID) > firstIncompleteIndex;
+    if(!LOCK_ENABLED || (currentAgent && currentAgent.admin) || progress[t.ID]) return false;
+    return SEQUENCE.findIndex(s => s.ID === t.ID) > frontier + 1;
   };
 
   const catList = document.getElementById('categoryList');
   catList.innerHTML = '';
+  renderWhatsNewBanner_(q);
   let anyResults = false;
   let catIndex = 0;
   CATEGORY_ORDER.forEach(cat => {
@@ -1608,10 +1833,11 @@ function renderResults(filterText){
         const statusSuffix = isLocked(t) ? ' \u00b7 \u{1F512} Locked' : progress[t.ID] ? ' \u00b7 \u2713 Done' : '';
         const enterStyle = q ? '' : `style="transition-delay:${(i%3)*60}ms"`;
         return `
-        <button class="topic-card ${sizeSeq[i]} ${progress[t.ID]?'done':''} ${isLocked(t)?'locked':''} ${q?'':'card-enter'}" ${enterStyle} data-id="${t.ID}" data-platform="${t.Platform}">
+        <button class="topic-card ${sizeSeq[i]} ${progress[t.ID]?'done':''} ${isLocked(t)?'locked':''} ${flagStatus_(t)?'flagged':''} ${q?'':'card-enter'}" ${enterStyle} data-id="${t.ID}" data-platform="${t.Platform}">
           <div class="card-meta">
             <span class="card-index">${String(lessonNumber).padStart(2,'0')}${statusSuffix}</span>
           </div>
+          ${flagTagHtml_(t)}
           <div class="card-title-row">
             <h3>${t.Topic}</h3>
             ${logoBadge(t)}
@@ -1662,6 +1888,14 @@ function renderTopicPage(id){
     </div>` : '';
   const linksHtml = renderReferenceLinksHtml(t) + renderAppLinksHtml(t);
 
+  // Quiz: only for a first completion (a finished lesson isn't re-quizzed).
+  const quizList = progress[id] ? [] : usableQuizzes_(t['Quiz']);
+  let quizDone = quizList.length === 0;
+  let quizMisses = 0;
+  const quizHtml = quizList.length ? renderQuizHtml_(quizList) : '';
+  const fStatus = flagStatus_(t);
+  const calloutHtml = fStatus ? flagCalloutHtml_(t, fStatus) : '';
+
   let bodyHtml;
   if(hasVideo){
     // The Broker Insight (and the reference/app links right after it) is
@@ -1705,9 +1939,11 @@ function renderTopicPage(id){
       <h1 class="page-title">${t.Topic}</h1>
       ${logoBadge(t)}
     </div>`}
+    ${calloutHtml}
     ${bodyHtml}
-    <button class="complete-next-btn ${progress[id]?'done':''} ${needsAllVideos?'locked':''}" id="completeBtn">
-      <span class="cnb-main">${needsAllVideos ? '\u{1F512} Watch all videos first' : (progress[id] ? '\u2713 Completed' : 'Mark Complete')}</span>
+    ${quizHtml}
+    <button class="complete-next-btn" id="completeBtn">
+      <span class="cnb-main">Mark Complete</span>
       <span class="cnb-sub">${next ? `Next: ${next.Topic}` : 'Back to Home'} \u2192</span>
     </button>
     <div class="footer-space"></div>`;
@@ -1728,16 +1964,46 @@ function renderTopicPage(id){
     }
   }
 
+  // One place decides what the big button says and whether it is locked:
+  // videos first, then the quiz, then "Mark Complete" (or "Mark as reviewed" for an updated lesson).
+  function refreshGate(){
+    const btn = document.getElementById('completeBtn');
+    if(!btn) return;
+    const label = btn.querySelector('.cnb-main');
+    const videosPending = currentPageGroups.length > 0 && !progress[id] && !allTabsViewedOnPage();
+    const quizPending = quizList.length > 0 && !progress[id] && !quizDone;
+    const reviewing = !!progress[id] && flagStatus_(t) === 'updated';
+    btn.classList.toggle('locked', videosPending || quizPending);
+    btn.classList.toggle('done', !!progress[id] && !reviewing);
+    if(videosPending) label.textContent = '\u{1F512} Watch all videos first';
+    else if(quizPending) label.textContent = '\u{1F512} Answer the quiz first';
+    else label.textContent = reviewing ? 'Mark as reviewed' : (progress[id] ? '\u2713 Completed' : 'Mark Complete');
+  }
+  function guideToQuiz(){
+    const el = document.getElementById('quizBlock');
+    if(!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    el.classList.add('pulse');
+    setTimeout(() => el.classList.remove('pulse'), 2400);
+  }
+
   document.getElementById('completeBtn').addEventListener('click', async (e) => {
     const btn = document.getElementById('completeBtn');
     if(btn.classList.contains('locked')){
-      guideToUnwatchedTab();
+      const videosPending = currentPageGroups.length > 0 && !progress[id] && !allTabsViewedOnPage();
+      if(videosPending) guideToUnwatchedTab(); else guideToQuiz();
       return;
     }
     const wasAlreadyDone = !!progress[id];
-    progress[id] = true;
-    if(!wasAlreadyDone) triggerConfetti(e.currentTarget.getBoundingClientRect());
-    await saveProgress(id, true);
+    const reviewing = wasAlreadyDone && flagStatus_(t) === 'updated';
+    const rect = e.currentTarget.getBoundingClientRect();
+    if(!wasAlreadyDone || reviewing){
+      const extra = (!wasAlreadyDone && quizList.length) ? { misses: quizMisses } : {};
+      const saved = await saveProgress(id, true, extra);
+      if(!saved) return; // stay on this lesson; saveProgress has already said why
+      if(reviewing) completedAt[id] = new Date();
+      else triggerConfetti(rect);
+    }
     if(next) renderTopicPage(next.ID);
     else renderDirectory();
   });
@@ -1769,13 +2035,34 @@ function renderTopicPage(id){
       }
     }
 
-    const completeBtn = document.getElementById('completeBtn');
-    if(completeBtn && completeBtn.classList.contains('locked') && allTabsViewedOnPage()){
-      completeBtn.classList.remove('locked');
-      const mainSpan = completeBtn.querySelector('.cnb-main');
-      if(mainSpan) mainSpan.textContent = 'Mark Complete';
-    }
+    refreshGate();
   }));
+
+  if(quizList.length){
+    const quizEl = document.getElementById('quizBlock');
+    const solved = new Set();
+    quizEl.addEventListener('click', ev => {
+      const opt = ev.target.closest('.quiz-opt');
+      if(!opt || opt.disabled) return;
+      const qi = Number(opt.dataset.q), oi = Number(opt.dataset.o);
+      if(solved.has(qi)) return;
+      if(quizList[qi].options[oi].correct){
+        solved.add(qi);
+        opt.classList.add('correct');
+        quizEl.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(b => { b.disabled = true; if(b !== opt) b.classList.add('dim'); });
+        quizEl.querySelector(`.quiz-q[data-q="${qi}"]`).classList.add('solved');
+      } else {
+        quizMisses++;
+        opt.classList.add('wrong');
+        opt.disabled = true;
+      }
+      const done = solved.size === quizList.length;
+      document.getElementById('quizCount').textContent = done ? 'All correct \u2713' : `${solved.size} of ${quizList.length} correct`;
+      if(done){ quizDone = true; quizEl.classList.add('complete'); }
+      refreshGate();
+    });
+  }
+  refreshGate();
   window.scrollTo(0,0);
 }
 
@@ -1786,6 +2073,7 @@ function renderAdmin(){
     <div style="display:flex; gap:10px; align-items:center; margin-top:16px;">
       <button class="add-topic-btn" id="addTopicBtn">+ Add New Topic</button>
       <button class="admin-btn" id="agentProgressBtn">Agent Progress</button>
+      <button class="admin-btn" id="announceBtn">Send What’s New now</button>
       <button class="admin-btn" id="signOutBtn" style="align-self:center;">\u21BA Sign out (${currentAgent ? currentAgent.email : 'not signed in'})</button>
     </div>
     <div id="deletedSection"></div>
@@ -1825,6 +2113,11 @@ function renderAdmin(){
   wireDragReorder(list);
   document.getElementById('addTopicBtn').addEventListener('click', () => renderEditForm(null));
   document.getElementById('agentProgressBtn').addEventListener('click', () => renderAgentProgressList());
+  document.getElementById('announceBtn').addEventListener('click', async () => {
+    if(!confirm('Send the What\u2019s New email now to everyone it concerns? It follows the same on/off switch as every email to agents.')) return;
+    const r = await postToSheet({ action: 'announceNow', idToken: currentAgent ? currentAgent.idToken : null });
+    showAdminToast(r.ok ? (r.message || ('Sent to ' + r.emailed + ' people')) : ('Not sent \u2014 ' + (r.error || 'unknown error')), !r.ok);
+  });
   renderDeletedSection();
 }
 
@@ -1963,7 +2256,7 @@ function slugify(title){
 }
 
 function renderEditForm(id){
-  const t = id ? TOPICS.find(x => x.ID === id) : { ID:'', Topic:'', Category: CATEGORY_ORDER[0], Platform:'ReChat', Order: 999, 'Page Content':'', 'Video Links':'', 'Quick Check':'' };
+  const t = id ? TOPICS.find(x => x.ID === id) : { ID:'', Topic:'', Category: CATEGORY_ORDER[0], Platform:'ReChat', Order: 999, 'Page Content':'', 'Video Links':'', Quiz:'', Flag:'', 'Change Note':'' };
   const isNew = !id;
   const main = document.getElementById('main');
   main.innerHTML = `
@@ -2006,12 +2299,27 @@ function renderEditForm(id){
         <textarea class="field-input" id="fVideo" style="min-height:70px;">${t['Video Links']}</textarea>
       </div>
       <div>
-        <label class="field-label">Quick Check(s)</label>
+        <label class="field-label">Quiz (optional)</label>
         <div class="format-help">
-          One question per block: <code>Question? A) opt B) opt [CORRECT]</code> &middot; add more than one by separating blocks with a line containing only <code>===</code>
+          The question on one line, then lines starting <code>A)</code> <code>B)</code> <code>C)</code> <code>D)</code> with <code>[CORRECT]</code> after the right one &middot; separate questions with a line containing only <code>===</code> &middot; leave empty for no quiz
         </div>
-        <textarea class="field-input" id="fQuiz" style="min-height:90px;">${t['Quick Check']}</textarea>
+        <textarea class="field-input" id="fQuiz" style="min-height:90px;">${t['Quiz'] || ''}</textarea>
       </div>
+      <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
+        <div style="flex:0 0 190px;">
+          <label class="field-label">Announce this change</label>
+          <select class="field-input" id="fFlag">
+            <option value="" ${!t.Flag?'selected':''}>No announcement</option>
+            <option value="New" ${t.Flag==='New'?'selected':''}>New lesson</option>
+            <option value="Updated" ${t.Flag==='Updated'?'selected':''}>Updated lesson</option>
+          </select>
+        </div>
+        <div style="flex:1; min-width:240px;">
+          <label class="field-label">Change note (one sentence)</label>
+          <input class="field-input" id="fNote" value="${(t['Change Note'] || '').replace(/"/g, '&quot;')}" placeholder="e.g. Added the step to confirm you are on DigiSign">
+        </div>
+      </div>
+      <div class="format-help">${t['Flag Date'] ? 'Announced ' + fmtDate_(new Date(t['Flag Date'])) + ' (set automatically). ' : ''}Agents see a gold tag, and a What\u2019s New email goes out about a day later. Changing the flag or the note re-announces it.</div>
       <div class="save-row">
         <button class="save-btn" id="saveBtn">Save</button>
         <button class="cancel-btn" id="cancelBtn">Cancel</button>
@@ -2032,7 +2340,9 @@ function renderEditForm(id){
       Platform: document.getElementById('fPlatform').value,
       'Page Content': document.getElementById('fContent').value,
       'Video Links': document.getElementById('fVideo').value,
-      'Quick Check': document.getElementById('fQuiz').value,
+      'Quiz': document.getElementById('fQuiz').value,
+      'Flag': document.getElementById('fFlag').value,
+      'Change Note': document.getElementById('fNote').value,
       'Source': t.Source || '', 'Status': 'Reviewed OK', __new: isNew
     };
     await saveOverride(updated);
@@ -2117,10 +2427,11 @@ async function sendChat(){
     const res = await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: 'askAcademy', messages: chatMessages })
+      body: JSON.stringify({ action: 'askAcademy', idToken: currentAgent ? currentAgent.idToken : null, messages: chatMessages })
     });
     const data = await res.json();
     removeTyping();
+    if(!data.ok && isSessionProblem_(data.error)){ requireSignInAgain_('Your session has ended. Please sign in again.'); return; }
     if(!data.ok) throw new Error(data.error || 'Unknown error');
     appendBubble('assistant', data.reply || "I couldn't find that in the reviewed content.");
     chatMessages.push({ role:'assistant', content: data.reply });
@@ -2139,15 +2450,22 @@ async function startApp(){
     await loadTopicsFromSheet();
     setLoadingStage_(2);
     await loadProgress();
+    if(pendingSave_){
+      const p = pendingSave_;
+      pendingSave_ = null;
+      if(currentAgent && p.email === currentAgent.email) await saveProgress(p.topicId, p.completed);
+    }
     setLoadingStage_(3);
     updateGlobalProgress();
     const chatSub = document.getElementById('chatSubtitle');
-    if(chatSub) chatSub.textContent = `Grounded in your ${TOPICS.length} reviewed topics only`;
+    if(chatSub) chatSub.textContent = `Grounded in your ${SEQUENCE.length} reviewed lessons only`;
+    applyAdminVisibility_();
     renderDirectory();
     setLoadingStage_(4);
   }catch(e){
     // Whatever broke, the person should see a real message, not a logo
     // that pulses forever with no explanation.
+    if(e instanceof AuthRequiredError) return; // the sign-in screen is already showing
     console.error('startApp failed', e);
     showLoadingError_();
     return; // leave the loading screen up, now showing the error state,
