@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>2CRRE Tech Training</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&family=Montserrat:wght@300;500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     --bg:#0d505a; --bg2:#0a4249; --panel:#0f5c67; --panel-hover:#136876; --line:rgba(255,255,255,0.14); --line-strong:rgba(255,255,255,0.26);
@@ -408,6 +408,131 @@
     font:inherit; font-size:0.85rem; font-weight:600; color:var(--black);
     background:var(--green); border:none; border-radius:20px; padding:9px 20px; cursor:pointer;
   }
+  /* ---- Pinned lesson text (see setupPinnedStage_) ---- */
+  @property --fade-top    { syntax:'<length>'; inherits:false; initial-value:0px; }
+  @property --fade-bottom { syntax:'<length>'; inherits:false; initial-value:0px; }
+  .rp-lwin, .rp-inner{ min-width:0; max-width:100%; }
+  @media (min-width:900px) and (min-height:560px){
+    .rp-track.rp-active{ position:relative; }
+    .rp-track.rp-active .split-layout{ position:sticky; top:84px; }
+    .rp-track.rp-active .rp-lwin,
+    .rp-track.rp-active .split-text{
+      overflow:hidden; overflow:clip;
+      -webkit-mask-image:linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+              mask-image:linear-gradient(to bottom, transparent 0, #000 var(--fade-top), #000 calc(100% - var(--fade-bottom)), transparent 100%);
+      transition:--fade-top .25s ease, --fade-bottom .25s ease;
+    }
+    .rp-track.rp-active .split-video{ will-change:transform; padding-bottom:40px; }
+    .rp-track.rp-active .rp-inner{ will-change:transform; padding-bottom:96px; } /* the last line clears the floating buttons */
+  }
+  @media (prefers-reduced-motion:reduce){ .rp-lwin, .split-text{ transition:none !important; } }
+
+  /* ---- Certificate ---- */
+  .cert-stage{ position:relative; width:100%; max-width:1100px; aspect-ratio:1100 / 850; overflow:hidden; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.45); background:#072f36; margin-top:8px; }
+  .cert{ position:absolute; left:0; top:0; width:1100px; height:850px; overflow:hidden; transform-origin:0 0; background:radial-gradient(ellipse 85% 72% at 50% 38%, #126774 0%, #0c4b55 46%, #072e35 100%); color:#f7f5ee; font-family:'Montserrat','Inter',sans-serif; box-sizing:border-box; }
+  .cert *{ box-sizing:border-box; margin:0; padding:0; }
+  .cert-arcs{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+  .cert-frame2{ position:absolute; inset:22px; border:1px solid rgba(255,255,255,0.13); }
+  .cert-frame{ position:absolute; inset:34px; border:1px solid rgba(169,210,127,0.55); }
+  .cert-bar{ position:absolute; left:50%; width:120px; height:4px; margin-left:-60px; background:#7ab942; }
+  .cert-bar.top{ top:32px; } .cert-bar.bottom{ bottom:32px; }
+  .cert-content{ position:absolute; inset:34px; display:flex; flex-direction:column; align-items:center; padding-top:58px; text-align:center; }
+  .cert-logo{ width:122px; height:106px; object-fit:contain; display:block; }
+  .cert-eyebrow{ margin-top:22px; font-weight:600; font-size:12px; letter-spacing:0.46em; text-transform:uppercase; color:#a9d27f; padding-left:0.46em; }
+  .cert-title{ margin-top:26px; font-weight:300; font-size:35px; letter-spacing:0.2em; text-transform:uppercase; color:#f7f5ee; padding-left:0.2em; line-height:1.1; }
+  .cert-short-rule{ width:56px; height:2px; margin-top:24px; background:#7ab942; }
+  .cert-certifies{ margin-top:30px; font-weight:500; font-size:11.5px; letter-spacing:0.38em; text-transform:uppercase; color:#b4cdc9; padding-left:0.38em; }
+  .cert-name-wrap{ margin-top:14px; width:780px; height:86px; display:flex; align-items:center; justify-content:center; }
+  .cert-name{ display:inline-block; white-space:nowrap; font-weight:300; font-size:64px; line-height:1.15; letter-spacing:-0.005em; color:#fff; }
+  .cert-rule{ width:520px; height:1px; margin-top:8px; background:linear-gradient(90deg, transparent, rgba(169,210,127,0.9), transparent); }
+  .cert-body{ margin-top:28px; width:760px; font-weight:300; font-size:16.5px; line-height:1.85; color:#d3e2df; }
+  .cert-body b{ font-weight:600; color:#fff; }
+  .cert-completed{ position:absolute; left:0; right:0; bottom:104px; text-align:center; }
+  .cert-completed .label{ font-weight:600; font-size:11px; letter-spacing:0.38em; text-transform:uppercase; color:#a9d27f; padding-left:0.38em; }
+  .cert-completed .value{ margin-top:11px; font-weight:500; font-size:22px; letter-spacing:0.02em; color:#f7f5ee; }
+  .cert-number{ position:absolute; left:0; right:0; bottom:58px; text-align:center; font-weight:500; font-size:10.5px; letter-spacing:0.3em; text-transform:uppercase; color:#b4cdc9; padding-left:0.3em; }
+  .cert-actions{ display:flex; flex-wrap:wrap; gap:12px; margin:22px 0 0; }
+  .cert-btn{ padding:12px 20px; border-radius:999px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.05); color:var(--ink); font:inherit; font-weight:600; font-size:0.92rem; cursor:pointer; transition:border-color .15s, background .15s; }
+  .cert-btn:hover{ border-color:var(--green); }
+  .cert-btn.primary{ background:var(--green); color:#0a2a30; border-color:var(--green); }
+  .cert-btn.warn{ border-color:rgba(230,181,60,0.7); color:#f3cf63; }
+  .cert-meta{ color:var(--ink-muted); font-size:0.88rem; line-height:1.6; margin-top:18px; max-width:700px; }
+  @page{ size:1100px 850px; margin:0; }
+  @media print{
+    body.printing-cert > *:not(#main){ display:none !important; }
+    body.printing-cert #main{ padding:0 !important; margin:0 !important; max-width:none !important; }
+    body.printing-cert #main > *:not(.cert-stage){ display:none !important; }
+    body.printing-cert .cert-stage{ position:fixed; left:0; top:0; width:1100px; height:850px; max-width:none; border-radius:0; box-shadow:none; margin:0; }
+    body.printing-cert .cert{ transform:none !important; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  }
+
+  /* ---- Certificate card, renewal pages, test, test tools ---- */
+  .cert-card{ display:flex; align-items:center; gap:16px; flex-wrap:wrap; margin:22px 0 0; padding:16px 18px; border-radius:14px; border:1px solid rgba(122,185,66,0.5); background:rgba(122,185,66,0.10); }
+  .cert-card.warn{ border-color:rgba(230,181,60,0.6); background:rgba(230,181,60,0.10); }
+  .cert-card.bad{ border-color:rgba(229,72,77,0.6); background:rgba(229,72,77,0.10); }
+  .cc-icon{ font-size:1.7rem; }
+  .cc-text{ flex:1; min-width:220px; display:flex; flex-direction:column; gap:2px; font-size:0.92rem; color:var(--ink-muted); }
+  .cc-text b{ color:var(--ink); font-size:1rem; }
+  .cc-actions{ display:flex; gap:10px; flex-wrap:wrap; }
+  .cc-actions button{ padding:10px 16px; border-radius:999px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.06); color:var(--ink); font:inherit; font-weight:600; font-size:0.86rem; cursor:pointer; }
+  .cc-actions button.primary{ background:var(--green); color:#0a2a30; border-color:var(--green); }
+  .rn-wrap{ max-width:760px; display:grid; gap:18px; margin-top:12px; }
+  .rn-card, .rn-step{ border:1px solid var(--line-strong); border-radius:16px; padding:20px 22px; background:rgba(0,0,0,0.14); }
+  .rn-card p{ color:var(--ink-muted); margin:6px 0 0; line-height:1.55; }
+  .rn-step-head{ display:flex; gap:14px; align-items:flex-start; }
+  .rn-step-head b{ display:block; font-size:1.05rem; color:var(--ink); margin-bottom:2px; }
+  .rn-step-head span:not(.rn-num){ color:var(--ink-muted); font-size:0.9rem; line-height:1.5; }
+  .rn-num{ flex:0 0 auto; width:30px; height:30px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-family:'IBM Plex Mono',monospace; font-size:0.85rem; border:1px solid var(--green); color:var(--green); }
+  .rn-num.done{ background:var(--green); color:#0a2a30; }
+  .rn-list{ margin-top:14px; display:grid; gap:10px; }
+  .rn-item{ display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; padding:12px 14px; border-radius:12px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.04); }
+  .rn-item.done{ opacity:0.6; }
+  .rn-tag{ display:inline-block; font:700 10px 'IBM Plex Mono',monospace; letter-spacing:0.14em; text-transform:uppercase; padding:4px 9px; border-radius:999px; margin-right:10px; border:1px solid rgba(230,181,60,0.6); color:#f3cf63; }
+  .rn-tag.missed{ border-color:rgba(229,72,77,0.6); color:#ffb7ba; }
+  .rn-item.done .rn-tag{ border-color:rgba(122,185,66,0.6); color:var(--green); }
+  .rn-title{ color:var(--ink); }
+  .rn-open, .rn-back{ padding:9px 16px; border-radius:999px; border:1px solid var(--green); background:transparent; color:var(--green); font:inherit; font-weight:600; font-size:0.86rem; cursor:pointer; }
+  .rn-go{ padding:12px 22px; border-radius:999px; border:1px solid var(--green); background:var(--green); color:#0a2a30; font:inherit; font-weight:700; font-size:0.95rem; cursor:pointer; }
+  .rn-go:disabled{ opacity:0.45; cursor:not-allowed; }
+  .rn-start{ margin-top:16px; display:flex; align-items:center; gap:14px; flex-wrap:wrap; }
+  .rn-why{ color:var(--ink-muted); font-size:0.86rem; }
+  .rn-ok{ margin-top:12px; color:var(--green); font-size:0.92rem; }
+  .rn-last{ margin-top:14px; padding:14px 16px; border-radius:12px; background:rgba(229,72,77,0.08); border:1px solid rgba(229,72,77,0.35); color:var(--ink); font-size:0.92rem; line-height:1.5; }
+  .rn-help{ margin-top:14px; color:var(--ink-muted); font-size:0.88rem; }
+  .rn-links{ margin-top:22px; }
+  .rn-banner{ display:flex; justify-content:space-between; align-items:center; gap:14px; flex-wrap:wrap; margin:0 0 22px; padding:14px 16px; border-radius:12px; background:rgba(230,181,60,0.10); border:1px solid rgba(230,181,60,0.45); max-width:680px; }
+  .rn-banner b{ display:block; color:#ffe9a8; margin-bottom:2px; }
+  .rn-banner span{ color:var(--ink); font-size:0.9rem; line-height:1.5; }
+  .rn-result{ max-width:640px; padding:30px 28px; border-radius:18px; border:1px solid var(--line-strong); background:rgba(0,0,0,0.14); }
+  .rn-result.pass{ border-color:rgba(122,185,66,0.7); } .rn-result.fail{ border-color:rgba(229,72,77,0.5); }
+  .rr-score{ font-family:'Fraunces',serif; font-size:3.4rem; line-height:1; color:var(--ink); }
+  .rr-score small{ font-size:1.4rem; color:var(--ink-muted); }
+  .rn-result > b{ display:block; margin:8px 0 6px; color:var(--ink); font-size:1.05rem; }
+  .rn-result p{ color:var(--ink-muted); line-height:1.55; margin:0 0 6px; }
+  .rr-actions{ margin-top:18px; display:flex; gap:12px; flex-wrap:wrap; }
+  .rt-opt.selected{ border-color:var(--green); background:rgba(122,185,66,0.16); }
+  .rt-opt.selected .quiz-letter{ color:var(--green); }
+  .quiz-q.pulse{ animation:quizPulse 1.2s ease 2; }
+  .cert-unlock{ position:fixed; inset:0; z-index:500; display:flex; align-items:center; justify-content:center; padding:20px; background:rgba(3,22,26,0.72); backdrop-filter:blur(4px); }
+  .cu-card{ max-width:440px; width:100%; padding:34px 30px; border-radius:20px; text-align:center; background:linear-gradient(160deg,#0f5a66,#0a3f48); border:1px solid rgba(122,185,66,0.6); box-shadow:0 30px 80px rgba(0,0,0,0.5); }
+  .cu-icon{ font-size:2.6rem; }
+  .cu-card h2{ font-family:'Fraunces',serif; font-weight:500; font-size:1.9rem; margin:8px 0 10px; color:var(--ink); }
+  .cu-card p{ color:var(--ink-muted); line-height:1.55; margin:0 0 22px; }
+  .cu-actions{ display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+  .cu-primary{ padding:13px 24px; border-radius:999px; border:0; background:var(--green); color:#0a2a30; font:inherit; font-weight:700; cursor:pointer; }
+  .cu-later{ padding:13px 22px; border-radius:999px; border:1px solid var(--line-strong); background:transparent; color:var(--ink); font:inherit; cursor:pointer; }
+  .tt-card{ max-width:760px; margin:18px 0 0; padding:20px 22px; border:1px solid var(--line-strong); border-radius:16px; background:rgba(0,0,0,0.14); }
+  .tt-actions{ display:flex; gap:10px; flex-wrap:wrap; margin:14px 0; }
+  .tt-actions button{ padding:10px 16px; border-radius:999px; border:1px solid var(--green); background:transparent; color:var(--green); font:inherit; font-weight:600; font-size:0.86rem; cursor:pointer; }
+  .tt-actions button.danger{ border-color:rgba(229,72,77,0.7); color:#ffb7ba; }
+  .tt-out{ color:var(--ink); font-size:0.9rem; }
+  .tt-table{ border-collapse:collapse; width:100%; margin-top:8px; }
+  .tt-table td{ padding:8px 10px 8px 0; border-top:1px solid var(--line); vertical-align:top; }
+  .tt-table td:first-child{ color:var(--ink-muted); width:190px; }
+  .tt-note{ padding:10px 12px; border-radius:10px; background:rgba(122,185,66,0.12); border:1px solid rgba(122,185,66,0.4); }
+  .tt-note.bad{ background:rgba(229,72,77,0.1); border-color:rgba(229,72,77,0.4); color:#ffb7ba; }
+  .tt-card ol{ margin:10px 0 0 18px; color:var(--ink-muted); line-height:1.7; font-size:0.92rem; }
+
   /* ---- New / Updated flags ---- */
   .topic-card{ position:relative; }
   .flag-tag{ position:absolute; top:14px; right:16px; z-index:3; font:700 10px 'IBM Plex Mono',monospace; letter-spacing:.16em; text-transform:uppercase; padding:5px 11px; border-radius:999px; }
@@ -762,7 +887,12 @@ async function saveProgress(topicId, completed, extra){
     showToast_('We couldn\u2019t save your progress. Check your connection and try again.');
     return false;
   }
-  if(data && data.ok){ if(completed && !previous) completedAt[topicId] = new Date(); return true; }
+  if(data && data.ok){
+    if(completed && !previous) completedAt[topicId] = new Date();
+    if(data.certificate) onCertificateIssued_(data.certificate);
+    else if(myStatus && myStatus.certificate) refreshStatus_();
+    return true;
+  }
 
   console.error('Progress save rejected by backend:', data && data.error);
   progress[topicId] = previous;
@@ -797,7 +927,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-22-C'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-24-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1303,7 +1433,7 @@ async function toggleReadAloud(){
 
   function highlightWordIndex(i){
     container.querySelectorAll('.tts-word.active').forEach(w => w.classList.remove('active'));
-    if(wordSpans[i]) wordSpans[i].classList.add('active');
+    if(wordSpans[i]){ wordSpans[i].classList.add('active'); followSpeech_(wordSpans[i]); }
   }
 
   // Highlighting follows only the browser's real word-boundary events.
@@ -1842,6 +1972,7 @@ function renderResults(filterText){
   const catList = document.getElementById('categoryList');
   catList.innerHTML = '';
   renderWhatsNewBanner_(q);
+  renderCertCard_(q);
   let anyResults = false;
   let catIndex = 0;
   CATEGORY_ORDER.forEach(cat => {
@@ -1899,6 +2030,593 @@ const DIAGRAM_TOPIC_ID = 'LP-RECHAT-FLOW';
 const DIAGRAM_TOPIC_HTML = "<div class=\"lprcflow\">\n<style>\n  .lprcflow{\n    --lprcflow-bg-top: #0c4650;\n    --lprcflow-bg-bottom: #082e34;\n    --lprcflow-green: #6fcf6f;\n    --lprcflow-red: #d9706e;\n    --lprcflow-ink: #f5f3ee;\n    --lprcflow-ink-muted: #cdd8d4;\n    --lprcflow-ink-faint: #9bb3ae;\n    --lprcflow-border: rgba(245,243,238,0.14);\n\n    background: transparent;\n    color: var(--lprcflow-ink);\n    font-family: -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif;\n    padding: 26px 48px;\n    box-sizing: border-box;\n  }\n  .lprcflow *{ box-sizing:border-box; }\n\n  .lprcflow .lprcflow-eyebrow{\n    font-family:'IBM Plex Mono',monospace; font-size:0.74rem; letter-spacing:0.05em;\n    text-transform:uppercase; color:var(--lprcflow-ink-faint); margin-bottom:10px; text-align:center;\n  }\n  .lprcflow h1{\n    font-family:'Fraunces',serif; font-size:1.85rem; font-weight:500; line-height:1.3;\n    margin:0 0 8px; text-align:center; color:var(--lprcflow-ink);\n  }\n  .lprcflow .lprcflow-dek{\n    text-align:center; font-size:0.92rem; color:var(--lprcflow-ink-muted);\n    max-width:560px; margin:0 auto 20px; line-height:1.6;\n  }\n  .lprcflow .lprcflow-wrap{ max-width:1100px; margin:0 auto; }\n\n  /* --- The animated visual: circles + arcs + dots, nothing else drawn\n     on top of it. Its only job is to show direction and motion. --- */\n  .lprcflow .lprcflow-diagram{ position:relative; margin-bottom:8px; }\n  .lprcflow .lprcflow-mobile-scroll-hint{ display:none; }\n  @media (max-width:700px){\n    .lprcflow .lprcflow-diagram{ overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }\n    .lprcflow .lprcflow-diagram-inner{ width:700px; }\n    .lprcflow .lprcflow-mobile-scroll-hint{\n      display:block; text-align:center; font-size:11.5px; color:var(--lprcflow-ink-faint);\n      letter-spacing:0.02em; margin-bottom:10px;\n    }\n  }\n  .lprcflow .lprcflow-node-circle{\n    fill:#0e3339; stroke:rgba(127,185,85,0.4); stroke-width:1;\n  }\n  .lprcflow .lprcflow-node-label{\n    font-family:'Fraunces',serif; font-size:27px; font-weight:400; fill:var(--lprcflow-ink); text-anchor:middle;\n  }\n  .lprcflow .lprcflow-node-sub{\n    font-family:-apple-system,'Inter',sans-serif; font-size:11px; letter-spacing:0.08em;\n    fill:var(--lprcflow-ink-faint); text-anchor:middle; text-transform:uppercase; font-weight:500;\n  }\n  .lprcflow .lprcflow-arc-label{\n    font-family:-apple-system,'Inter',sans-serif; font-size:13px; letter-spacing:0.02em;\n    text-anchor:middle; font-weight:700;\n  }\n  .lprcflow .lprcflow-arc-label.lprcflow-green{ fill:var(--lprcflow-green); }\n  .lprcflow .lprcflow-arc-label.lprcflow-red{ fill:var(--lprcflow-red); }\n\n  .lprcflow .lprcflow-path{ fill:none; stroke-width:1.75; }\n  .lprcflow .lprcflow-path.lprcflow-green{ stroke:var(--lprcflow-green); opacity:0.58; }\n  .lprcflow .lprcflow-path.lprcflow-red{ stroke:var(--lprcflow-red); opacity:0.38; stroke-width:1.5; }\n\n  .lprcflow .lprcflow-dot{\n    position:absolute; top:0; left:0; white-space:nowrap;\n    padding:2.5px 8px; border-radius:10px; font-size:10.5px; font-weight:700;\n    letter-spacing:0.01em; box-shadow:0 2px 6px rgba(0,0,0,0.3);\n    offset-rotate: 0deg;\n  }\n  .lprcflow .lprcflow-dot.lprcflow-green{ background:#bdeab0; color:#17390f; }\n  .lprcflow .lprcflow-dot.lprcflow-red{ background:#f3c7c5; color:#4a1715; }\n  @keyframes lprcflow-flow{\n    from{ offset-distance:0%; opacity:0; }\n    6%{ opacity:1; }\n    94%{ opacity:1; }\n    to{ offset-distance:100%; opacity:0; }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .lprcflow .lprcflow-dot{ animation:none !important; opacity:0 !important; }\n  }\n\n  /* --- The data, in normal document flow below the diagram. Flow\n     layout means these blocks physically cannot overlap each other,\n     the diagram, or anything else, at any width. --- */\n  .lprcflow .lprcflow-data{\n    display:grid;\n    grid-template-columns: 1fr 1fr;\n    gap:28px 40px;\n    margin-top:12px;\n  }\n  .lprcflow .lprcflow-block{ border-top:1px solid var(--lprcflow-border); padding-top:18px; }\n  .lprcflow .lprcflow-block-title{\n    font-size:12px; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;\n    margin-bottom:14px;\n  }\n  .lprcflow .lprcflow-block-title.lprcflow-green{ color:var(--lprcflow-green); }\n  .lprcflow .lprcflow-block-title.lprcflow-red{ color:var(--lprcflow-red); }\n\n  .lprcflow .lprcflow-cat{ margin-bottom:12px; }\n  .lprcflow .lprcflow-cat:last-child{ margin-bottom:0; }\n  .lprcflow .lprcflow-cat-label{\n    font-size:12px; font-weight:700; color:var(--lprcflow-ink-faint); margin-bottom:5px;\n  }\n  .lprcflow .lprcflow-cat ul{ list-style:none; margin:0; padding:0; }\n  .lprcflow .lprcflow-cat li{\n    font-size:15px; line-height:1.65; color:var(--lprcflow-ink);\n  }\n  .lprcflow .lprcflow-block--red .lprcflow-cat li{ color:var(--lprcflow-ink-muted); font-size:14px; }\n  .lprcflow .lprcflow-caveat{ color:var(--lprcflow-green); font-weight:600; }\n  .lprcflow .lprcflow-caveat-red{ color:var(--lprcflow-red) !important; }\n\n  .lprcflow .lprcflow-scrollcue{\n    display:flex; flex-direction:column; align-items:center; gap:4px;\n    text-align:center; font-size:12px; color:var(--lprcflow-ink-faint);\n    letter-spacing:0.02em; margin:12px 0 8px;\n  }\n  .lprcflow .lprcflow-scrollcue svg{\n    animation:lprcflow-nudge 1.8s ease-in-out infinite;\n  }\n  @keyframes lprcflow-nudge{\n    0%, 100%{ transform:translateY(0); opacity:0.55; }\n    50%{ transform:translateY(4px); opacity:1; }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .lprcflow .lprcflow-scrollcue svg{ animation:none; }\n  }\n\n  .lprcflow .lprcflow-legend{\n    display:flex; justify-content:center; gap:32px; margin-top:36px;\n    font-size:0.84rem; color:var(--lprcflow-ink-faint);\n  }\n  .lprcflow .lprcflow-legend span{ display:inline-flex; align-items:center; gap:8px; }\n  .lprcflow .lprcflow-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }\n  .lprcflow .lprcflow-legend i.lprcflow-green{ background:var(--lprcflow-green); }\n  .lprcflow .lprcflow-legend i.lprcflow-red{ background:var(--lprcflow-red); }\n\n  @media (max-width: 640px){\n    .lprcflow .lprcflow-data{ grid-template-columns:1fr; }\n  }\n</style>\n\n  <div class=\"lprcflow-eyebrow\">2CRRE Tech Training \u2014 Reference Diagram</div>\n  <h1>How a contact flows between Luxury Presence and ReChat</h1>\n  <p class=\"lprcflow-dek\">Website leads move one way. Ongoing contact management moves the other. A few things stay put on each platform.</p>\n\n  <div class=\"lprcflow-wrap\">\n\n    <div class=\"lprcflow-mobile-scroll-hint\">Scroll sideways to see the full diagram \u2194</div>\n    <div class=\"lprcflow-diagram\">\n     <div class=\"lprcflow-diagram-inner\">\n      <svg class=\"lprcflow-svg\" viewBox=\"0 0 1100 630\" style=\"width:100%; height:auto; overflow:visible;\">\n        <defs>\n          <marker id=\"lprcflow-arrowGreen\" markerWidth=\"9\" markerHeight=\"9\" refX=\"5\" refY=\"2.5\" orient=\"auto\">\n            <path d=\"M0,0 L5,2.5 L0,5 Z\" fill=\"#6fcf6f\"/>\n          </marker>\n          <marker id=\"lprcflow-arrowRed\" markerWidth=\"9\" markerHeight=\"9\" refX=\"5\" refY=\"2.5\" orient=\"auto\">\n            <path d=\"M0,0 L5,2.5 L0,5 Z\" fill=\"#d9706e\"/>\n          </marker>\n        </defs>\n\n        <path class=\"lprcflow-path lprcflow-green\" d=\"M 300 340 C 470 580, 630 580, 800 340\" marker-end=\"url(#lprcflow-arrowGreen)\"/>\n        <path class=\"lprcflow-path lprcflow-green\" d=\"M 760 220 C 640 150, 460 150, 340 220\" marker-end=\"url(#lprcflow-arrowGreen)\"/>\n        <path class=\"lprcflow-path lprcflow-red\" d=\"M 195 185 C 140 150, 115 110, 100 70\" marker-end=\"url(#lprcflow-arrowRed)\"/>\n        <path class=\"lprcflow-path lprcflow-red\" d=\"M 905 185 C 960 150, 985 110, 1000 70\" marker-end=\"url(#lprcflow-arrowRed)\"/>\n\n        <text class=\"lprcflow-arc-label lprcflow-green\" x=\"550\" y=\"410\">Moves into ReChat</text>\n        <text class=\"lprcflow-arc-label lprcflow-green\" x=\"550\" y=\"140\">Moves into Luxury Presence</text>\n        <text class=\"lprcflow-arc-label lprcflow-red\" x=\"65\" y=\"45\">Stays in LP</text>\n        <text class=\"lprcflow-arc-label lprcflow-red\" x=\"1035\" y=\"45\">Stays in ReChat</text>\n\n        <circle class=\"lprcflow-node-circle\" cx=\"275\" cy=\"275\" r=\"108\"/>\n        <text class=\"lprcflow-node-label\" x=\"275\" y=\"265\">Luxury</text>\n        <text class=\"lprcflow-node-label\" x=\"275\" y=\"297\">Presence</text>\n        <text class=\"lprcflow-node-sub\" x=\"275\" y=\"326\">Where website</text>\n        <text class=\"lprcflow-node-sub\" x=\"275\" y=\"342\">leads enter</text>\n\n        <circle class=\"lprcflow-node-circle\" cx=\"825\" cy=\"275\" r=\"108\"/>\n        <text class=\"lprcflow-node-label\" x=\"825\" y=\"281\">ReChat</text>\n        <text class=\"lprcflow-node-sub\" x=\"825\" y=\"313\">Source of truth</text>\n      </svg>\n      <div class=\"lprcflow-dotlayer\" style=\"position:absolute; inset:0; pointer-events:none;\"></div>\n     </div>\n    </div>\n\n    <div class=\"lprcflow-scrollcue\">\n      <span>Full item-by-item breakdown below</span>\n      <svg width=\"14\" height=\"8\" viewBox=\"0 0 14 8\"><path d=\"M1 1l6 6 6-6\" stroke=\"currentColor\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>\n    </div>\n\n    <div class=\"lprcflow-data\">\n      <div class=\"lprcflow-block\">\n        <div class=\"lprcflow-block-title lprcflow-green\">New website lead enters ReChat with</div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact info</div>\n          <ul><li>Name</li><li>Email</li><li>Phone number</li></ul>\n        </div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Website activity</div>\n          <ul>\n            <li>Inquiries made on the website</li>\n            <li>Favorite properties</li>\n            <li>Saved search</li>\n            <li>Showing requests</li>\n            <li>Listing views</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block\">\n        <div class=\"lprcflow-block-title lprcflow-green\">Ongoing contact management syncs back to LP</div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact updates</div>\n          <ul><li>Any edits to the contact</li><li>Notes you add</li><li>Tags you add</li></ul>\n        </div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact lifecycle</div>\n          <ul>\n            <li>New contacts created in ReChat</li>\n            <li><span class=\"lprcflow-caveat\">Deleting</span> a contact in ReChat removes it in Luxury Presence too</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block lprcflow-block--red\">\n        <div class=\"lprcflow-block-title lprcflow-red\">Stays in Luxury Presence</div>\n        <div class=\"lprcflow-cat\">\n          <ul>\n            <li><span class=\"lprcflow-caveat lprcflow-caveat-red\">Editing</span> a contact directly in Luxury Presence stays in Luxury Presence only</li>\n            <li>Messages in Collaborations</li>\n            <li>Messages from the AI Lead Nurturer</li>\n            <li>Enriched Data</li>\n            <li>LP Smart Actions</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block lprcflow-block--red\">\n        <div class=\"lprcflow-block-title lprcflow-red\">Stays in ReChat</div>\n        <div class=\"lprcflow-cat\">\n          <ul><li>Transactions</li><li>Open Houses</li></ul>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"lprcflow-legend\">\n      <span><i class=\"lprcflow-green\"></i> Syncs between platforms</span>\n      <span><i class=\"lprcflow-red\"></i> Stays on that platform only</span>\n    </div>\n  </div>\n\n";
 const DIAGRAM_TOPIC_JS = "(function(){\n  var root = document.currentScript.closest('.lprcflow');\n  if(!root) return;\n\n  var instanceId = 'lprcflow-' + Math.random().toString(36).slice(2, 9);\n  root.querySelectorAll('marker[id], radialGradient[id]').forEach(function(el){\n    var oldId = el.id;\n    var newId = instanceId + '-' + oldId;\n    el.id = newId;\n    root.querySelectorAll('[marker-end=\"url(#' + oldId + ')\"]').forEach(function(ref){\n      ref.setAttribute('marker-end', 'url(#' + newId + ')');\n    });\n    root.querySelectorAll('[fill=\"url(#' + oldId + ')\"]').forEach(function(ref){\n      ref.setAttribute('fill', 'url(#' + newId + ')');\n    });\n  });\n\n  var PATHS = {\n    arcDown:    \"M 300 340 C 470 580, 630 580, 800 340\",\n    arcUp:      \"M 760 220 C 640 150, 460 150, 340 220\",\n    arcLeftOut: \"M 195 185 C 140 150, 115 110, 100 70\",\n    arcRightOut:\"M 905 185 C 960 150, 985 110, 1000 70\"\n  };\n  // Each dot is one specific thing, not an abstract particle -- counts\n  // match the real item lists below exactly, and a hover tooltip names\n  // which item that dot is, in the same order the items are listed.\n  // Full names (used as the hover tooltip and matching the lists below)\n  // vs. short labels (what actually fits readably inside a moving bubble).\n  var ITEMS = {\n    arcDown: ['Name, email, and phone number', 'Inquiries made on the website', 'Favorite properties', 'Saved search', 'Showing requests', 'Listing views'],\n    arcUp: ['Any edits to the contact', 'Notes you add', 'Tags you add', 'New contacts created in ReChat', 'Deleted contacts'],\n    arcLeftOut: ['Edits made directly in LP', 'Messages in Collaborations', 'Messages from the AI Lead Nurturer', 'Enriched Data', 'LP Smart Actions'],\n    arcRightOut: ['Transactions', 'Open Houses']\n  };\n  var SHORT = {\n    arcDown: ['Contact Info', 'Inquiry', 'Favorite Listings', 'Saved Searches', 'Showing Requests', 'Listing Views'],\n    arcUp: ['Contact Edits', 'Contact Notes', 'Tags', 'New Contact', 'Deletion'],\n    arcLeftOut: ['Contact Edit', 'Collaboration Messages', 'AI Nurturer Msg', 'Enriched Data', 'Smart Action'],\n    arcRightOut: ['Transaction', 'Open House']\n  };\n  var DOT_COUNTS = { arcDown: 6, arcUp: 5, arcLeftOut: 5, arcRightOut: 2 };\n  var COLORS = { arcDown: 'lprcflow-green', arcUp: 'lprcflow-green', arcLeftOut: 'lprcflow-red', arcRightOut: 'lprcflow-red' };\n  var DURATIONS = { arcDown: 6.5, arcUp: 4.8, arcLeftOut: 4.8, arcRightOut: 3.0 };\n\n  var layer = root.querySelector('.lprcflow-dotlayer');\n  var svg = root.querySelector('.lprcflow-svg');\n\n  function placeDots(){\n    layer.innerHTML = '';\n    var vb = svg.viewBox.baseVal;\n    var rect = svg.getBoundingClientRect();\n    var scale = rect.width / vb.width;\n    layer.style.transform = 'scale(' + scale + ')';\n    layer.style.transformOrigin = 'top left';\n    layer.style.width = vb.width + 'px';\n    layer.style.height = vb.height + 'px';\n\n    Object.keys(PATHS).forEach(function(key){\n      var count = DOT_COUNTS[key];\n      var duration = DURATIONS[key];\n      var items = ITEMS[key];\n      var shorts = SHORT[key];\n      for(var i = 0; i < count; i++){\n        var dot = document.createElement('div');\n        dot.className = 'lprcflow-dot ' + COLORS[key];\n        dot.textContent = shorts[i];\n        dot.title = items[i];\n        dot.style.offsetPath = \"path('\" + PATHS[key] + \"')\";\n        dot.style.animation = 'lprcflow-flow ' + duration + 's linear infinite backwards';\n        dot.style.animationDelay = (i * duration / count) + 's';\n        layer.appendChild(dot);\n      }\n    });\n  }\n\n  placeDots();\n  window.addEventListener('resize', placeDots);\n})();\n";
 
+// ---------------- PINNED LESSON TEXT ----------------
+// On desktop and tablet-landscape, a lesson with a video AND a long text keeps the video pinned while
+// the page's own scroll rolls the text beside it (no scroll bar; it works wherever the pointer is).
+//   1. the video stays pinned and the TEXT rolls beside it
+//   2. when the text has all rolled past, the VIDEO COLUMN rolls up to show what sits under the video
+//      (Broker Insight, links, Open button); on a tall screen all of it fits, so this step doesn't happen
+//   3. then the stage lets go and the page carries on
+// Phones, short texts and lessons without a video stay a normal flowing page.
+//
+//   .rp-track         tall: stage height + how far the text and the video column must roll
+//     .split-layout   the stage: sticky, so it stays put while the track scrolls past
+//       .rp-lwin      window for the video column (clips; soft at the edges)
+//         .split-video  the video + what sits under it (moves up in step 2)
+//       .split-text   window for the text (clips; soft at the edges)
+//         .rp-inner   the text (moves up in step 1)
+const PINNED_TEXT_ENABLED = true; // set to false to go back to the plain flowing page everywhere
+let pinnedStage_ = null;
+function teardownPinnedStage_(){ if(pinnedStage_){ pinnedStage_.destroy(); pinnedStage_ = null; } }
+function followSpeech_(el){ if(pinnedStage_) pinnedStage_.follow(el); }
+
+function setupPinnedStage_(){
+  teardownPinnedStage_();
+  if(!PINNED_TEXT_ENABLED) return;
+  const track = document.getElementById('rpTrack');
+  if(!track) return;
+  const layout = track.querySelector('.split-layout'), lwin = track.querySelector('.rp-lwin'), vcol = track.querySelector('.split-video');
+  const textCol = track.querySelector('.split-text'), inner = track.querySelector('.rp-inner');
+  if(!layout || !lwin || !vcol || !textCol || !inner) return;
+
+  const PIN_TOP = 84;        // just under the sticky header + progress bar
+  const BOTTOM_GAP = 24;
+  const PAD_TEXT = 96;       // matches .rp-inner padding-bottom
+  const PAD_LEFT = 40;       // matches .split-video padding-bottom
+  const mq = window.matchMedia('(min-width:900px) and (min-height:560px)');
+  let active = false, textOverflow = 0, leftOverflow = 0, stageH = 0, ticking = false, ro = null;
+
+  function measure(){
+    if(!track.isConnected){ destroy(); return; }
+    track.classList.remove('rp-active');
+    track.style.height = layout.style.height = lwin.style.height = textCol.style.height = '';
+    inner.style.transform = vcol.style.transform = '';
+    active = false;
+    if(mq.matches){
+      stageH = Math.max(420, window.innerHeight - PIN_TOP - BOTTOM_GAP);
+      const textH = inner.offsetHeight + PAD_TEXT;
+      const leftH = vcol.offsetHeight + PAD_LEFT;
+      textOverflow = textH - stageH;
+      leftOverflow = Math.max(0, leftH - stageH);
+      // Only worth pinning when the text really is longer than the stage.
+      if(textOverflow > 60){
+        track.classList.add('rp-active');
+        layout.style.height = lwin.style.height = textCol.style.height = stageH + 'px';
+        track.style.height = (stageH + textOverflow + leftOverflow) + 'px';
+        active = true;
+      }
+    }
+    update();
+  }
+
+  function update(){
+    ticking = false;
+    if(!track.isConnected){ destroy(); return; }
+    if(!active){ [lwin, textCol].forEach(e => { e.style.removeProperty('--fade-top'); e.style.removeProperty('--fade-bottom'); }); return; }
+    const rel = Math.min(Math.max(PIN_TOP - track.getBoundingClientRect().top, 0), textOverflow + leftOverflow);
+    const yText = Math.min(rel, textOverflow);                                   // step 1
+    const yLeft = Math.min(Math.max(rel - textOverflow, 0), leftOverflow);       // step 2
+    inner.style.transform = 'translate3d(0,' + (-yText) + 'px,0)';
+    vcol.style.transform  = 'translate3d(0,' + (-yLeft) + 'px,0)';
+    textCol.style.setProperty('--fade-top',    yText > 4                ? '56px' : '0px');
+    textCol.style.setProperty('--fade-bottom', yText < textOverflow - 4 ? '56px' : '0px');
+    lwin.style.setProperty('--fade-top',       yLeft > 4                ? '56px' : '0px');
+    lwin.style.setProperty('--fade-bottom',    leftOverflow > 0 && yLeft < leftOverflow - 4 ? '56px' : '0px');
+  }
+  const onScroll = () => { if(!ticking){ ticking = true; requestAnimationFrame(update); } };
+
+  // Scroll the page so that `wantY` pixels of a column have rolled (startAt = where that column's roll begins).
+  function scrollToRoll(startAt, wantY){
+    window.scrollTo({ top: track.getBoundingClientRect().top + window.scrollY - PIN_TOP + startAt + wantY, behavior:'auto' });
+  }
+  // Tabbing to a link or button that has rolled out of sight brings it into view. Things already visible,
+  // and the video itself, are left exactly where they are.
+  function reveal(el, win, content, startAt, maxY){
+    if(!active || el.tagName === 'IFRAME') return;
+    const w = win.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if(r.top >= w.top - 1 && r.bottom <= w.bottom + 1) return;
+    const inside = r.top - content.getBoundingClientRect().top;      // where it sits inside its column
+    scrollToRoll(startAt, Math.min(Math.max(inside - stageH * 0.35, 0), maxY));
+  }
+  // Read aloud: when the spoken word reaches the bottom of the window, turn the page so it sits near the top.
+  // (A word above the window means the person has scrolled ahead of the voice: leave them be.)
+  function follow(el){
+    if(!active || !track.isConnected || !textCol.contains(el)) return;
+    const w = textCol.getBoundingClientRect(), r = el.getBoundingClientRect();
+    if(r.top < w.top || r.bottom <= w.bottom - 70) return;
+    const inside = r.top - inner.getBoundingClientRect().top;
+    scrollToRoll(0, Math.min(Math.max(inside - stageH * 0.3, 0), textOverflow));
+  }
+  const onInnerFocus = e => reveal(e.target, textCol, inner, 0, textOverflow);
+  const onVideoFocus = e => reveal(e.target, lwin, vcol, textOverflow, leftOverflow);
+  function destroy(){
+    window.removeEventListener('scroll', onScroll);
+    window.removeEventListener('resize', measure);
+    mq.removeEventListener ? mq.removeEventListener('change', measure) : mq.removeListener(measure);
+    inner.removeEventListener('focusin', onInnerFocus);
+    vcol.removeEventListener('focusin', onVideoFocus);
+    if(ro) ro.disconnect();
+    if(pinnedStage_ && pinnedStage_.track === track) pinnedStage_ = null;
+  }
+
+  inner.addEventListener('focusin', onInnerFocus);
+  vcol.addEventListener('focusin', onVideoFocus);
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', measure);
+  mq.addEventListener ? mq.addEventListener('change', measure) : mq.addListener(measure);
+  if('ResizeObserver' in window){ ro = new ResizeObserver(measure); ro.observe(inner); ro.observe(vcol); }
+  document.fonts && document.fonts.ready && document.fonts.ready.then(measure);
+  pinnedStage_ = { track, destroy, follow, state: () => ({ active, textOverflow, leftOverflow, stageH }) };
+  measure();
+}
+
+// ---------------- CERTIFICATES AND RENEWALS ----------------
+// The server decides everything that matters (who is certified, when, whether the renewal test was
+// passed); this is only the screens. myStatus is that state for the signed-in person.
+let myStatus = null;
+
+async function loadStatus(){
+  if(!currentAgent) return;
+  try{
+    const res = await fetch(APPS_SCRIPT_URL + '?action=status&session=' + sessionParam_());
+    const d = await res.json();
+    if(d && d.authRequired){ requireSignInAgain_('Please sign in to continue.'); throw new AuthRequiredError(); }
+    myStatus = (d && d.ok) ? d : null;
+  }catch(e){
+    if(e instanceof AuthRequiredError) throw e;
+    console.error('Could not load certificate status', e); // not fatal: the lessons still work
+  }
+}
+function refreshStatus_(){
+  return loadStatus().then(() => { if(document.getElementById('categoryList')) renderCertCard_(''); }).catch(() => {});
+}
+function fmtLong_(d){ return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }); }
+function daysText_(n){ return n + (n === 1 ? ' day' : ' days'); }
+// A dropped connection reads as plain words, not "Failed to fetch".
+function friendlyError_(d, fallback){
+  const e = d && d.error;
+  return (!e || /failed to fetch|networkerror|load failed|network request failed|fetch/i.test(String(e))) ? fallback : e;
+}
+
+// While a renewal is open, the "View your answers" pages are hidden (the test is a real test).
+function renewalHidesAnswers_(){ return !!(myStatus && myStatus.certificate && myStatus.renewal && myStatus.renewal.windowOpen); }
+function renewalInfoFor_(id){
+  const r = myStatus && myStatus.renewal;
+  if(!r || !r.windowOpen) return { pending: false, must: false };
+  return { pending: r.pendingChanges.some(x => x.id === id), must: r.mustReview.some(x => x.id === id) };
+}
+// Local, instant updates so the renewal page is right the moment you come back to it; the server's truth replaces them right after.
+function localResolveChange_(id){
+  const r = myStatus && myStatus.renewal; if(!r) return;
+  r.pendingChanges = r.pendingChanges.filter(x => x.id !== id);
+  r.blockedReason = r.pendingChanges.length ? 'changes' : (r.mustReview.length ? 'review' : '');
+  r.canStart = r.windowOpen && !r.blockedReason;
+}
+function localResolveMust_(id){
+  const r = myStatus && myStatus.renewal; if(!r) return;
+  r.mustReview = r.mustReview.filter(x => x.id !== id);
+  if(r.last && r.last.reviewed.indexOf(id) === -1) r.last.reviewed = r.last.reviewed.concat([id]);
+  r.blockedReason = r.pendingChanges.length ? 'changes' : (r.mustReview.length ? 'review' : '');
+  r.canStart = r.windowOpen && !r.blockedReason;
+}
+function renewalBannerHtml_(rn){
+  return `<div class="rn-banner"><div><b>Part of your renewal</b><span>${rn.must ? 'You missed questions from this lesson. Read it again, then press \u201cI\u2019ve reviewed this lesson\u201d.' : 'This lesson is new or updated since you were certified. Go through it, then head back to your renewal.'}</span></div><button type="button" class="rn-back" id="rnBack">Back to renewal</button></div>`;
+}
+function renewalReviewClick_(id){
+  localResolveMust_(id);
+  renderRenewalPage();
+  postToSheet({ action: 'renewalReview', idToken: currentAgent.idToken, topicId: id }).then(d => {
+    if(d && d.ok) return refreshStatus_();
+    if(isSessionProblem_(d && d.error)){ requireSignInAgain_('Your session has ended. Please sign in again.'); return; }
+    showToast_('We couldn\u2019t save that review. Please try again.');
+    return refreshStatus_().then(() => { if(document.getElementById('rnPage')) renderRenewalPage(); });
+  });
+}
+
+// ---- the card on the lesson list ----
+function renderCertCard_(q){
+  const old = document.getElementById('certCard');
+  if(old) old.remove();
+  if(q || !myStatus || !myStatus.certificate) return;
+  const catList = document.getElementById('categoryList');
+  if(!catList) return;
+  const c = myStatus.certificate, r = myStatus.renewal || {};
+  const until = new Date(c.validUntil);
+  let cls = 'ok', title, text, primary = '';
+  if(r.lapsed){ cls = 'bad'; title = 'Your certificate has expired'; text = 'It expired on ' + fmtLong_(until) + '. Renew it any time to get a fresh one.'; primary = 'Renew now'; }
+  else if(r.windowOpen){ cls = 'warn'; title = 'Time to renew your certificate'; text = 'It expires in ' + daysText_(Math.max(myStatus.daysLeft, 0)) + ', on ' + fmtLong_(until) + '.'; primary = 'Start renewal'; }
+  else { title = 'You\u2019re certified'; text = 'Certificate No. ' + c.no + ' \u00b7 valid until ' + fmtLong_(until) + '.'; }
+  const el = document.createElement('div');
+  el.id = 'certCard'; el.className = 'cert-card ' + cls;
+  el.innerHTML = `<div class="cc-icon" aria-hidden="true">\u{1F393}</div><div class="cc-text"><b>${title}</b><span>${text}</span></div>
+    <div class="cc-actions"><button type="button" id="ccView">View certificate</button>${primary ? `<button type="button" class="primary" id="ccRenew">${primary}</button>` : ''}</div>`;
+  catList.parentNode.insertBefore(el, catList);
+  el.querySelector('#ccView').addEventListener('click', () => renderCertificatePage());
+  const rn = el.querySelector('#ccRenew');
+  if(rn) rn.addEventListener('click', () => renderRenewalPage());
+}
+
+// ---- the moment you finish the last lesson ----
+function onCertificateIssued_(cert){
+  if(!myStatus) myStatus = { ok: true, certificate: cert, valid: true, daysLeft: 182, renewal: { windowOpen: false, lapsed: false, pendingChanges: [], mustReview: [], blockedReason: '', canStart: false, last: null, failedCount: 0, needsHelp: false, hasOpenAttempt: false } };
+  else myStatus.certificate = cert;
+  refreshStatus_();
+  const old = document.getElementById('certUnlock');
+  if(old) old.remove();
+  const el = document.createElement('div');
+  el.id = 'certUnlock'; el.className = 'cert-unlock'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true'); el.setAttribute('aria-label', 'You are certified');
+  el.innerHTML = `<div class="cu-card"><div class="cu-icon" aria-hidden="true">\u{1F393}</div><h2>You\u2019re certified!</h2><p>You\u2019ve completed every lesson of the Academy. Your certificate is ready to download.</p><div class="cu-actions"><button type="button" class="cu-primary" id="cuView">View my certificate</button><button type="button" class="cu-later" id="cuLater">Later</button></div></div>`;
+  document.body.appendChild(el);
+  const close = () => el.remove();
+  el.querySelector('#cuLater').addEventListener('click', close);
+  el.addEventListener('click', e => { if(e.target === el) close(); });
+  el.querySelector('#cuView').addEventListener('click', () => { close(); renderCertificatePage(); });
+  el.querySelector('#cuView').focus();
+}
+
+// ---- the certificate itself (one design, shown on screen, printed, or saved as an image) ----
+function certHtml_(c){
+  const renewal = c.type === 'Renewal';
+  return `<div class="cert" id="certEl">
+    <svg class="cert-arcs" viewBox="0 0 1100 850" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="1.4"><path d="M -60 700 C 260 600, 640 620, 1160 510"/><path d="M -60 758 C 300 660, 700 690, 1160 578"/><path d="M 360 910 C 520 620, 720 470, 1000 300"/></g></svg>
+    <div class="cert-frame2"></div><div class="cert-frame"></div><div class="cert-bar top"></div><div class="cert-bar bottom"></div>
+    <div class="cert-content">
+      <img class="cert-logo" src="data:image/png;base64,${LOGOS.twocrre}" alt="2 Costa Rica Real Estate">
+      <div class="cert-eyebrow">2CRRE Tech Academy</div>
+      <div class="cert-title">Certificate of ${renewal ? 'Renewal' : 'Completion'}</div>
+      <div class="cert-short-rule"></div>
+      <div class="cert-certifies">This certifies that</div>
+      <div class="cert-name-wrap"><span class="cert-name" id="certName">${escapeHtml(c.name)}</span></div>
+      <div class="cert-rule"></div>
+      <p class="cert-body">${renewal ? 'has successfully renewed their certification in the' : 'has successfully completed the'} <b>2CRRE Tech Academy</b>,<br>the technology training program of<br>2 Costa Rica Real Estate.</p>
+    </div>
+    <div class="cert-completed"><div class="label">${renewal ? 'Renewed' : 'Completed'}</div><div class="value">${fmtLong_(new Date(c.issuedOn))}</div></div>
+    <div class="cert-number">Certificate No. ${escapeHtml(c.no)}</div>
+  </div>`;
+}
+// A long name shrinks until it fits, so it never overflows or wraps.
+function fitCertName_(){
+  const el = document.getElementById('certName');
+  if(!el) return;
+  let size = 64; el.style.fontSize = size + 'px';
+  while(el.offsetWidth > 760 && size > 14){ size -= 1; el.style.fontSize = size + 'px'; }
+}
+function scaleCert_(){
+  const stage = document.getElementById('certStage'), cert = document.getElementById('certEl');
+  if(!stage || !cert) return false;
+  cert.style.transform = 'scale(' + (stage.clientWidth / 1100) + ')';
+  return true;
+}
+
+function renderCertificatePage(){
+  stopReadAloud_(); teardownPinnedStage_();
+  if(!myStatus || !myStatus.certificate){ showToast_('Your certificate will appear here once you finish every lesson.'); renderDirectory(); return; }
+  const c = myStatus.certificate, r = myStatus.renewal || {};
+  document.getElementById('main').innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+    <div class="lesson-meta">Your certificate</div>
+    <div class="page-title-row"><h1 class="page-title">Certificate</h1></div>
+    <div class="cert-stage" id="certStage">${certHtml_(c)}</div>
+    <div class="cert-actions">
+      <button type="button" class="cert-btn primary" id="certPng">Download image (PNG)</button>
+      <button type="button" class="cert-btn" id="certPrint">Print or save as PDF</button>
+      ${r.windowOpen ? `<button type="button" class="cert-btn warn" id="certRenew">${r.lapsed ? 'Renew now' : 'Start renewal'}</button>` : ''}
+    </div>
+    <p class="cert-meta">Certificate No. <b>${escapeHtml(c.no)}</b> \u00b7 issued ${fmtLong_(new Date(c.issuedOn))} \u00b7 ${r.lapsed ? 'expired' : 'valid until'} <b>${fmtLong_(new Date(c.validUntil))}</b>.<br>If your name isn\u2019t spelled the way you want it, tell the team and we\u2019ll correct it.</p>
+    <div class="build-stamp">Build ${BUILD_ID}</div>
+    <div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
+  document.getElementById('certPng').addEventListener('click', () => downloadCertPng_(c));
+  document.getElementById('certPrint').addEventListener('click', () => printCertificate_());
+  const rn = document.getElementById('certRenew');
+  if(rn) rn.addEventListener('click', () => renderRenewalPage());
+  scaleCert_(); fitCertName_();
+  if(document.fonts && document.fonts.ready) document.fonts.ready.then(() => { fitCertName_(); scaleCert_(); });
+  const onResize = () => { if(!scaleCert_()) window.removeEventListener('resize', onResize); };
+  window.addEventListener('resize', onResize);
+  window.scrollTo(0, 0);
+}
+
+function printCertificate_(){
+  document.body.classList.add('printing-cert');
+  const done = () => { document.body.classList.remove('printing-cert'); window.removeEventListener('afterprint', done); };
+  window.addEventListener('afterprint', done);
+  window.print();
+}
+
+// The same design drawn on a canvas: a 2200 x 1700 image to keep or share.
+async function downloadCertPng_(c){
+  const S = 2, W = 1100 * S, H = 850 * S, renewal = c.type === 'Renewal';
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const g = cv.getContext('2d');
+  try{ await Promise.all([document.fonts.load('300 64px Montserrat'), document.fonts.load('500 20px Montserrat'), document.fonts.load('600 12px Montserrat')]); }catch(e){}
+  const FF = "Montserrat, 'Helvetica Neue', Arial, sans-serif";
+  // background: an ellipse of light, as in the design
+  g.save(); g.translate(W * 0.5, H * 0.38);
+  const rx = W * 0.85, ry = H * 0.72; g.scale(1, ry / rx);
+  const grad = g.createRadialGradient(0, 0, 0, 0, 0, rx);
+  grad.addColorStop(0, '#126774'); grad.addColorStop(0.46, '#0c4b55'); grad.addColorStop(1, '#072e35');
+  g.fillStyle = grad; g.fillRect(-W * 2, -H * 2 * (rx / ry), W * 4, H * 4 * (rx / ry)); g.restore();
+  g.scale(S, S);
+  g.strokeStyle = 'rgba(255,255,255,0.055)'; g.lineWidth = 1.4;
+  [[-60, 700, 260, 600, 640, 620, 1160, 510], [-60, 758, 300, 660, 700, 690, 1160, 578], [360, 910, 520, 620, 720, 470, 1000, 300]].forEach(p => { g.beginPath(); g.moveTo(p[0], p[1]); g.bezierCurveTo(p[2], p[3], p[4], p[5], p[6], p[7]); g.stroke(); });
+  g.lineWidth = 1;
+  g.strokeStyle = 'rgba(255,255,255,0.13)'; g.strokeRect(22.5, 22.5, 1055, 805);
+  g.strokeStyle = 'rgba(169,210,127,0.55)'; g.strokeRect(34.5, 34.5, 1031, 781);
+  g.fillStyle = '#7ab942'; g.fillRect(490, 32, 120, 4); g.fillRect(490, 814, 120, 4);
+  g.textBaseline = 'middle';
+  // letter-spaced text, centred on the page, drawn glyph by glyph so it works in every browser
+  const spaced = (text, y, font, color, spacing) => {
+    g.font = font; g.fillStyle = color; g.textAlign = 'left';
+    const chars = [...text], widths = chars.map(ch => g.measureText(ch).width);
+    let x = 550 - (widths.reduce((a, b) => a + b, 0) + spacing * (chars.length - 1)) / 2;
+    chars.forEach((ch, i) => { g.fillText(ch, x, y); x += widths[i] + spacing; });
+  };
+  const mixed = (parts, y) => {
+    g.textAlign = 'left';
+    const widths = parts.map(p => { g.font = p.font; return g.measureText(p.text).width; });
+    let x = 550 - widths.reduce((a, b) => a + b, 0) / 2;
+    parts.forEach((p, i) => { g.font = p.font; g.fillStyle = p.color; g.fillText(p.text, x, y); x += widths[i]; });
+  };
+  try{
+    const logo = new Image(); logo.src = 'data:image/png;base64,' + LOGOS.twocrre;
+    await logo.decode();
+    const k = Math.min(122 / logo.naturalWidth, 106 / logo.naturalHeight);
+    g.drawImage(logo, 550 - logo.naturalWidth * k / 2, 92 + (106 - logo.naturalHeight * k) / 2, logo.naturalWidth * k, logo.naturalHeight * k);
+  }catch(e){}
+  spaced('2CRRE TECH ACADEMY', 227, `600 12px ${FF}`, '#a9d27f', 5.52);
+  spaced('CERTIFICATE OF ' + (renewal ? 'RENEWAL' : 'COMPLETION'), 279, `300 35px ${FF}`, '#f7f5ee', 7);
+  g.fillStyle = '#7ab942'; g.fillRect(522, 322.5, 56, 2);
+  spaced('THIS CERTIFIES THAT', 361.5, `500 11.5px ${FF}`, '#b4cdc9', 4.37);
+  let size = 64; g.font = `300 ${size}px ${FF}`;
+  while(g.measureText(c.name).width > 760 && size > 14){ size -= 1; g.font = `300 ${size}px ${FF}`; }
+  g.fillStyle = '#ffffff'; g.textAlign = 'center'; g.fillText(c.name, 550, 425.5);
+  const rule = g.createLinearGradient(290, 0, 810, 0);
+  rule.addColorStop(0, 'rgba(169,210,127,0)'); rule.addColorStop(0.5, 'rgba(169,210,127,0.9)'); rule.addColorStop(1, 'rgba(169,210,127,0)');
+  g.fillStyle = rule; g.fillRect(290, 476.5, 520, 1);
+  const light = `300 16.5px ${FF}`, bold = `600 16.5px ${FF}`, bodyCol = '#d3e2df';
+  mixed([{ text: (renewal ? 'has successfully renewed their certification in the ' : 'has successfully completed the '), font: light, color: bodyCol }, { text: '2CRRE Tech Academy', font: bold, color: '#ffffff' }, { text: ',', font: light, color: bodyCol }], 520.75);
+  mixed([{ text: 'the technology training program of', font: light, color: bodyCol }], 551.25);
+  mixed([{ text: '2 Costa Rica Real Estate.', font: light, color: bodyCol }], 581.75);
+  spaced(renewal ? 'RENEWED' : 'COMPLETED', 702.5, `600 11px ${FF}`, '#a9d27f', 4.18);
+  spaced(fmtLong_(new Date(c.issuedOn)), 733, `500 22px ${FF}`, '#f7f5ee', 0.44);
+  spaced(('Certificate No. ' + c.no).toUpperCase(), 786, `500 10.5px ${FF}`, '#b4cdc9', 3.15);
+  cv.toBlob(blob => {
+    if(!blob){ showToast_('We couldn\u2019t create the image. Try \u201cPrint or save as PDF\u201d instead.'); return; }
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = '2CRRE-Certificate-' + c.no + '.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  }, 'image/png');
+}
+
+// ---- the renewal page ----
+function renewalItemsHtml_(list, reviewed, kindOf){
+  return list.map(x => {
+    const done = reviewed && reviewed.indexOf(x.id) !== -1;
+    const kind = kindOf ? kindOf(x) : '';
+    return `<div class="rn-item${done ? ' done' : ''}"><div><span class="rn-tag ${kind.toLowerCase()}">${done ? '\u2713 Reviewed' : escapeHtml(kind)}</span><span class="rn-title">${escapeHtml(x.topic)}</span></div>${done ? '' : `<button type="button" class="rn-open" data-open="${escapeHtml(x.id)}">Open lesson</button>`}</div>`;
+  }).join('');
+}
+
+function renderRenewalPage(){
+  stopReadAloud_(); teardownPinnedStage_();
+  const main = document.getElementById('main');
+  if(!myStatus || !myStatus.certificate){ renderDirectory(); return; }
+  const c = myStatus.certificate, r = myStatus.renewal;
+  const until = new Date(c.validUntil), opens = new Date(until.getTime() - 30 * 864e5);
+  const when = r.lapsed ? 'Your certificate expired on ' + fmtLong_(until) + '.' : 'Your certificate expires on ' + fmtLong_(until) + ' (' + daysText_(Math.max(myStatus.daysLeft, 0)) + ' left).';
+  let body;
+  if(!r.windowOpen){
+    body = `<div class="rn-card"><b>Renewal isn\u2019t open yet.</b><p>It opens on ${fmtLong_(opens)}, 30 days before your certificate expires. We\u2019ll email you when it does.</p></div>`;
+  } else {
+    const pend = r.pendingChanges, last = r.last, failed = last && last.result === 'Failed';
+    const step1 = `<div class="rn-step"><div class="rn-step-head"><span class="rn-num${pend.length ? '' : ' done'}">${pend.length ? '1' : '\u2713'}</span><div><b>Review what\u2019s new</b><span>Lessons that are new or updated since you were certified.</span></div></div>
+      ${pend.length ? `<div class="rn-list">${renewalItemsHtml_(pend, null, x => x.kind)}</div>` : '<div class="rn-ok">Nothing to review. You\u2019re up to date.</div>'}</div>`;
+    const startLabel = r.hasOpenAttempt ? 'Continue your test' : (failed ? 'Retake the test' : 'Start the test');
+    const blocked = !r.canStart && !r.hasOpenAttempt;
+    const why = r.blockedReason === 'changes' ? 'Finish step 1 first.' : (r.blockedReason === 'review' ? 'Review the lessons you missed first.' : '');
+    const lastHtml = failed ? `<div class="rn-last"><b>Your last try: ${last.score} of ${last.total} (${last.percent}%).</b> You need ${Math.ceil(last.total * r.passPercent / 100)} to pass. Review the lessons you missed, then try again.
+        <div class="rn-list">${renewalItemsHtml_(last.missed, last.reviewed, () => 'Missed')}</div></div>` : '';
+    const step2 = `<div class="rn-step"><div class="rn-step-head"><span class="rn-num">2</span><div><b>Take the test</b><span>${r.questions} questions \u00b7 ${r.passPercent}% to pass (${Math.ceil(r.questions * r.passPercent / 100)} of ${r.questions}) \u00b7 one answer per question, and you see your result when you submit.</span></div></div>
+      ${lastHtml}
+      <div class="rn-start"><button type="button" class="rn-go" id="rnStart"${blocked ? ' disabled' : ''}>${startLabel}</button>${blocked && why ? `<span class="rn-why">${why}</span>` : ''}</div>
+      ${r.needsHelp ? '<p class="rn-help">Having a tough time with this? That\u2019s okay. The team will reach out to help.</p>' : ''}</div>`;
+    body = step1 + step2;
+  }
+  main.innerHTML = `
+    <div id="rnPage"></div>
+    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+    <div class="lesson-meta">Certificate renewal</div>
+    <div class="page-title-row"><h1 class="page-title">Renew your certificate</h1></div>
+    <p class="quiz-lesson-name">${when}</p>
+    <div class="rn-wrap">${body}</div>
+    <div class="rn-links"><button type="button" class="cert-btn" id="rnCert">View my certificate</button></div>
+    <div class="build-stamp">Build ${BUILD_ID}</div><div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
+  document.getElementById('rnCert').addEventListener('click', () => renderCertificatePage());
+  main.querySelectorAll('.rn-open').forEach(b => b.addEventListener('click', () => renderTopicPage(b.dataset.open)));
+  const st = document.getElementById('rnStart');
+  if(st) st.addEventListener('click', () => startRenewalTest_());
+  window.scrollTo(0, 0);
+}
+
+// ---- the test ----
+function readDraft_(attemptId){
+  try{ const d = JSON.parse(sessionStorage.getItem('2crre-rn-draft') || 'null'); if(d && d.attemptId === attemptId) return d.answers || {}; }catch(e){}
+  return {};
+}
+function writeDraft_(attemptId, answers){ try{ sessionStorage.setItem('2crre-rn-draft', JSON.stringify({ attemptId, answers })); }catch(e){} }
+function clearDraft_(){ try{ sessionStorage.removeItem('2crre-rn-draft'); }catch(e){} }
+
+async function startRenewalTest_(){
+  const btn = document.getElementById('rnStart');
+  if(btn){ btn.disabled = true; btn.textContent = 'Starting\u2026'; }
+  const d = await postToSheet({ action: 'renewalStart', idToken: currentAgent.idToken });
+  if(isSessionProblem_(d && d.error)){ requireSignInAgain_('Your session has ended. Please sign in again.'); return; }
+  if(!d || !d.ok){
+    showToast_(friendlyError_(d, 'We couldn\u2019t start the test. Check your connection and try again.'));
+    await refreshStatus_(); renderRenewalPage(); return;
+  }
+  renderRenewalTest_(d);
+}
+
+function renderRenewalTest_(att){
+  stopReadAloud_(); teardownPinnedStage_();
+  const answers = readDraft_(att.attemptId);
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to renewal</button>
+    <div class="lesson-meta">Renewal test \u00b7 ${att.total} questions</div>
+    <div class="page-title-row"><h1 class="page-title">Renewal test</h1></div>
+    <p class="quiz-lesson-name">Pick one answer for each question. You\u2019ll see your result when you submit.</p>
+    <section class="quiz-block rt-block" id="rtBlock" aria-label="Renewal test questions">
+      <div class="quiz-head"><span class="quiz-eyebrow">80% to pass</span><span class="quiz-count" id="rtCount" aria-live="polite"></span></div>
+      ${att.questions.map((q, qi) => `
+        <div class="quiz-q" data-ref="${escapeHtml(q.ref)}">
+          <div class="quiz-q-text"><span class="quiz-q-num">${qi + 1}</span><span>${escapeHtml(q.q)}</span></div>
+          <div class="quiz-options">${q.options.map((o, pos) => `<button type="button" class="quiz-opt rt-opt${answers[q.ref] === o.o ? ' selected' : ''}" data-ref="${escapeHtml(q.ref)}" data-o="${o.o}"><span class="quiz-letter">${'ABCD'[pos]}</span><span class="quiz-opt-text">${escapeHtml(o.text)}</span></button>`).join('')}</div>
+        </div>`).join('')}
+    </section>
+    <button class="complete-next-btn" id="completeBtn"><span class="cnb-main"></span><span class="cnb-sub">You can change answers until you submit</span></button>
+    <div class="build-stamp">Build ${BUILD_ID}</div><div class="footer-space"></div>`;
+  const btn = document.getElementById('completeBtn'), label = btn.querySelector('.cnb-main');
+  const block = document.getElementById('rtBlock');
+  let submitting = false;
+  const answered = () => att.questions.filter(q => answers[q.ref] !== undefined).length;
+  function refresh(){
+    const n = answered(), left = att.total - n;
+    document.getElementById('rtCount').textContent = n + ' of ' + att.total + ' answered';
+    btn.classList.toggle('locked', left > 0 || submitting);
+    label.textContent = submitting ? 'Submitting\u2026' : (left > 0 ? '\u{1F512} Answer all questions (' + left + ' left)' : 'Submit test');
+  }
+  block.addEventListener('click', ev => {
+    const opt = ev.target.closest('.rt-opt');
+    if(!opt || submitting) return;
+    answers[opt.dataset.ref] = Number(opt.dataset.o);
+    block.querySelectorAll('.rt-opt[data-ref="' + CSS.escape(opt.dataset.ref) + '"]').forEach(b => b.classList.toggle('selected', b === opt));
+    writeDraft_(att.attemptId, answers);
+    refresh();
+  });
+  document.getElementById('backBtn').addEventListener('click', () => { if(!submitting) renderRenewalPage(); });
+  btn.addEventListener('click', async () => {
+    if(submitting) return;
+    if(btn.classList.contains('locked')){
+      const first = att.questions.find(q => answers[q.ref] === undefined);
+      const el = first && block.querySelector('.quiz-q[data-ref="' + CSS.escape(first.ref) + '"]');
+      if(el){ el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 2000); }
+      return;
+    }
+    if(!window.confirm('Submit your answers? You can\u2019t change them afterwards.')) return;
+    submitting = true; refresh();
+    const d = await postToSheet({ action: 'renewalSubmit', idToken: currentAgent.idToken, attemptId: att.attemptId, answers: answers });
+    submitting = false;
+    if(isSessionProblem_(d && d.error)){ requireSignInAgain_('Your session has ended. Please sign in again. Your answers are saved on this device.'); return; }
+    if(!d || !d.ok){ showToast_(friendlyError_(d, 'We couldn\u2019t submit your answers. Check your connection and try again.')); refresh(); return; }
+    clearDraft_();
+    await refreshStatus_();
+    renderRenewalResult_(d);
+  });
+  refresh();
+  window.scrollTo(0, 0);
+}
+
+function renderRenewalResult_(res){
+  stopReadAloud_(); teardownPinnedStage_();
+  const main = document.getElementById('main');
+  const passed = !!res.passed;
+  main.innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+    <div class="lesson-meta">Renewal test \u00b7 result</div>
+    <div class="page-title-row"><h1 class="page-title">${passed ? 'You passed' : 'Not quite yet'}</h1></div>
+    <div class="rn-result ${passed ? 'pass' : 'fail'}" id="rrCard">
+      <div class="rr-score">${res.score}<small>/${res.total}</small></div>
+      <b>${res.percent}%${passed ? '' : ' \u00b7 you needed ' + res.needed + ' of ' + res.total}</b>
+      ${passed
+        ? '<p>Your certificate is renewed and valid for 6 months. Well done.</p><div class="rr-actions"><button type="button" class="rn-go" id="rrCert">View my certificate</button><button type="button" class="cert-btn" id="rrHome">Back to all topics</button></div>'
+        : `<p>Review the lessons below, then take the test again. It will have a fresh set of questions.</p><div class="rn-list">${renewalItemsHtml_(res.missed, (myStatus && myStatus.renewal && myStatus.renewal.last && myStatus.renewal.last.reviewed) || [], () => 'Missed')}</div><div class="rr-actions"><button type="button" class="rn-go" id="rrBack">Go to my renewal</button></div>`}
+    </div>
+    <div class="build-stamp">Build ${BUILD_ID}</div><div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
+  main.querySelectorAll('.rn-open').forEach(b => b.addEventListener('click', () => renderTopicPage(b.dataset.open)));
+  const a = document.getElementById('rrCert'), h = document.getElementById('rrHome'), bk = document.getElementById('rrBack');
+  if(a) a.addEventListener('click', () => renderCertificatePage());
+  if(h) h.addEventListener('click', () => renderDirectory());
+  if(bk) bk.addEventListener('click', () => renderRenewalPage());
+  if(passed) triggerConfetti(document.getElementById('rrCard').getBoundingClientRect());
+  window.scrollTo(0, 0);
+}
+
+// ---- links in the emails (#certificate, #renew) ----
+function routeFromHash_(){
+  const h = (location.hash || '').toLowerCase();
+  if(!h || !myStatus || !myStatus.certificate) return;
+  try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
+  if(h === '#certificate') renderCertificatePage();
+  else if(h === '#renew') renderRenewalPage();
+}
+
+// ---- Admin: test tools, so none of this has to wait six months ----
+function ttSummaryHtml_(d){
+  const st = d.status || {}, r = st.renewal || {};
+  const rows = [['Lessons completed', d.completed + ' of ' + d.totalLessons]];
+  if(st.certificate){
+    rows.push(['Certificate', escapeHtml(st.certificate.no) + ' (' + escapeHtml(st.certificate.type) + ')']);
+    rows.push(['Issued', fmtLong_(new Date(st.certificate.issuedOn))]);
+    rows.push(['Valid until', fmtLong_(new Date(st.certificate.validUntil)) + ' \u00b7 ' + (st.daysLeft >= 0 ? daysText_(st.daysLeft) + ' left' : 'expired ' + daysText_(-st.daysLeft) + ' ago')]);
+    rows.push(['Renewal', r.lapsed ? 'Lapsed: can renew now' : (r.windowOpen ? 'Open' : 'Opens 30 days before it expires')]);
+    if(r.windowOpen){
+      rows.push(['To review first', r.pendingChanges.length ? r.pendingChanges.map(x => escapeHtml(x.topic) + ' (' + escapeHtml(x.kind) + ')').join(', ') : 'nothing']);
+      rows.push(['Failed attempts', String(r.failedCount) + (r.needsHelp ? ' (flagged: needs help)' : '')]);
+      if(r.last) rows.push(['Last attempt', r.last.score + '/' + r.last.total + ' (' + r.last.percent + '%), ' + r.last.result.toLowerCase()]);
+      if(r.mustReview.length) rows.push(['Must review before retake', r.mustReview.map(x => escapeHtml(x.topic)).join(', ')]);
+    }
+  } else rows.push(['Certificate', 'none yet']);
+  return (d.note ? '<div class="tt-note">' + escapeHtml(d.note) + '</div>' : '') + '<table class="tt-table">' + rows.map(x => '<tr><td>' + x[0] + '</td><td>' + x[1] + '</td></tr>').join('') + '</table>';
+}
+
+function renderTestTools_(){
+  stopReadAloud_(); teardownPinnedStage_();
+  document.getElementById('main').innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to Admin</button>
+    <div class="lesson-meta">Admin \u00b7 Test tools</div>
+    <div class="page-title-row"><h1 class="page-title">Test tools</h1></div>
+    <p class="quiz-lesson-name">Try the certificate and the renewal without waiting 6 months. They only ever touch the accounts you listed in the Script Property TEST_ACCOUNTS.</p>
+    <div class="tt-card">
+      <label class="field-label" for="ttEmail">Test account</label>
+      <input class="field-input" id="ttEmail" value="${escapeHtml(currentAgent.email)}" autocomplete="off">
+      <div class="tt-actions">
+        <button type="button" data-op="finishAll">1. Finish all lessons</button>
+        <button type="button" data-op="setExpiry" data-days="20">2. Expire in 20 days</button>
+        <button type="button" data-op="setExpiry" data-days="-7">3. Already expired</button>
+        <button type="button" data-op="status">Refresh</button>
+        <button type="button" data-op="reset" class="danger">Reset this account</button>
+      </div>
+      <div class="tt-out" id="ttOut">Press Refresh to see this account\u2019s status.</div>
+    </div>
+    <div class="tt-card"><b>How to try it</b>
+      <ol>
+        <li>Press <b>1</b>. The account finishes every lesson and gets its certificate. Then reload the Academy to see it.</li>
+        <li>Press <b>2</b>. The renewal window opens. Reload and you\u2019ll see the renewal card.</li>
+        <li>To test \u201creview what\u2019s new\u201d, edit any lesson in Admin and set it to Updated or New, then look at the renewal page.</li>
+        <li>Start the test. Answer wrong on purpose once to see the fail, review and retake loop, then pass it.</li>
+        <li>Press <b>Reset</b> when you\u2019re done, to leave the account clean.</li>
+      </ol>
+    </div>
+    <div class="build-stamp">Build ${BUILD_ID}</div><div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => renderAdmin());
+  const out = document.getElementById('ttOut');
+  document.querySelectorAll('.tt-actions button').forEach(b => b.addEventListener('click', async () => {
+    const op = b.dataset.op, email = document.getElementById('ttEmail').value.trim();
+    if(op === 'reset' && !window.confirm('Reset ' + email + '? This deletes its lesson progress, certificates and renewal attempts.')) return;
+    out.textContent = 'Working\u2026';
+    const d = await postToSheet({ action: 'testTool', idToken: currentAgent.idToken, op: op, email: email, days: b.dataset.days === undefined ? undefined : Number(b.dataset.days) });
+    if(!d || !d.ok){ out.innerHTML = '<div class="tt-note bad">' + escapeHtml(friendlyError_(d, 'That didn\u2019t work. Check your connection.')) + '</div>'; return; }
+    out.innerHTML = ttSummaryHtml_(d);
+    if(email.toLowerCase() === currentAgent.email.toLowerCase()){ try{ await loadProgress(); await loadStatus(); }catch(e){} }
+  }));
+}
+
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
@@ -1914,6 +2632,8 @@ function quizLinkCardHtml_(n){
 // | 'retry' = a save failed, every answer is already right, so just press the button again.
 function renderQuizPage(id, mode){
   stopReadAloud_();
+  teardownPinnedStage_();
+  if(mode === 'review' && renewalHidesAnswers_()){ showToast_('Quiz answers are hidden while your renewal is open.'); renderTopicPage(id); return; }
   const t = TOPICS.find(x => x.ID === id);
   const list = usableQuizzes_(t['Quiz']);
   if(!list.length){ renderTopicPage(id); return; }
@@ -1945,7 +2665,8 @@ function renderQuizPage(id, mode){
     btn.classList.toggle('done', mode === 'review');
     label.textContent = !quizDone ? '\u{1F512} Answer every question' : (mode === 'review' ? '\u2713 Completed' : 'Mark Complete');
   }
-  const goNext = () => { if(next) renderTopicPage(next.ID); else renderDirectory(); };
+  const inRenewal = !!(myStatus && myStatus.renewal && myStatus.renewal.pendingChanges.some(x => x.id === id));
+  const goNext = () => { if(inRenewal){ localResolveChange_(id); renderRenewalPage(); } else if(next) renderTopicPage(next.ID); else renderDirectory(); };
   document.getElementById('backBtn').addEventListener('click', () => renderTopicPage(id));
 
   if(!answered){
@@ -1988,6 +2709,7 @@ function renderQuizPage(id, mode){
     triggerConfetti(rect);
     saving.then(ok => {
       if(ok){ delete quizMissesById_[id]; return; }
+      refreshStatus_();
       if(!pendingSave_) renderQuizPage(id, 'retry'); // (a sign-in screen is up instead when the session ended)
     });
     goNext();
@@ -2022,7 +2744,9 @@ function renderTopicPage(id){
   const allQuiz = usableQuizzes_(t['Quiz']);
   const needsQuiz = allQuiz.length > 0 && !progress[id];
   const armedAt = Date.now() + 700; // a double-tap on the previous lesson's button must never land on this one
-  const quizHtml = (allQuiz.length && progress[id]) ? quizLinkCardHtml_(allQuiz.length) : '';
+  const quizHtml = (allQuiz.length && progress[id] && !renewalHidesAnswers_()) ? quizLinkCardHtml_(allQuiz.length) : '';
+  const rn = renewalInfoFor_(id); // is this lesson part of the person's renewal?
+  const rnBanner = (rn.pending || rn.must) ? renewalBannerHtml_(rn) : '';
   const fStatus = flagStatus_(t);
   const calloutHtml = fStatus ? flagCalloutHtml_(t, fStatus) : '';
 
@@ -2032,17 +2756,25 @@ function renderTopicPage(id){
     // rendered twice \u2014 once after the video (desktop) and once after the
     // content (mobile) \u2014 with CSS toggling which copy shows. See the note
     // on .insight-desktop-only / .insight-mobile-only for why.
+    // rp-track / rp-lwin / rp-inner are the wrappers for the pinned lesson text (see
+    // setupPinnedStage_). On their own they change nothing about how the page looks.
     bodyHtml = `
+      <div class="rp-track" id="rpTrack">
       <div class="split-layout">
-        <div class="split-video">
-          <div class="video-stack">${renderVideoSection(t['Video Links'])}</div>
-          <div class="insight-desktop-only">${insightHtml}${linksHtml}</div>
+        <div class="rp-lwin">
+          <div class="split-video">
+            <div class="video-stack">${renderVideoSection(t['Video Links'])}</div>
+            <div class="insight-desktop-only">${insightHtml}${linksHtml}</div>
+          </div>
         </div>
         <div class="split-text">
-          ${id === DIAGRAM_TOPIC_ID ? '' : readAloudControlHtml()}
-          <div class="content-block" id="ttsContentBlock">${contentHtml}</div>
-          <div class="insight-mobile-only">${insightHtml}${linksHtml}</div>
+          <div class="rp-inner">
+            ${id === DIAGRAM_TOPIC_ID ? '' : readAloudControlHtml()}
+            <div class="content-block" id="ttsContentBlock">${contentHtml}</div>
+            <div class="insight-mobile-only">${insightHtml}${linksHtml}</div>
+          </div>
         </div>
+      </div>
       </div>`;
   } else {
     // 0 videos: no video to pair with, so just full-width text and insight
@@ -2069,6 +2801,7 @@ function renderTopicPage(id){
       <h1 class="page-title">${t.Topic}</h1>
       ${logoBadge(t)}
     </div>`}
+    ${rnBanner}
     ${calloutHtml}
     ${bodyHtml}
     ${quizHtml}
@@ -2106,8 +2839,9 @@ function renderTopicPage(id){
     const reviewing = !!progress[id] && flagStatus_(t) === 'updated';
     const nextText = (next ? `Next: ${next.Topic}` : 'Back to Home') + ' \u2192';
     btn.classList.toggle('locked', videosPending);
-    btn.classList.toggle('done', !!progress[id] && !reviewing);
+    btn.classList.toggle('done', !!progress[id] && !reviewing && !rn.must);
     if(videosPending){ label.textContent = '\u{1F512} Watch all videos first'; sub.textContent = nextText; }
+    else if(rn.must){ label.textContent = 'I\u2019ve reviewed this lesson'; sub.textContent = 'Back to your renewal \u2192'; }
     else if(needsQuiz){ label.textContent = 'Continue to the quiz'; sub.textContent = allQuiz.length + (allQuiz.length === 1 ? ' question' : ' questions') + ' \u2192'; }
     else { label.textContent = reviewing ? 'Mark as reviewed' : (progress[id] ? '\u2713 Completed' : 'Mark Complete'); sub.textContent = nextText; }
   }
@@ -2115,6 +2849,7 @@ function renderTopicPage(id){
   document.getElementById('completeBtn').addEventListener('click', (e) => {
     const btn = document.getElementById('completeBtn');
     if(btn.classList.contains('locked')){ guideToUnwatchedTab(); return; }
+    if(rn.must){ renewalReviewClick_(id); return; } // a lesson missed in the renewal test, re-read
     if(needsQuiz){ renderQuizPage(id); return; } // the lesson is read: on to the quiz
     if(Date.now() < armedAt) return; // (see armedAt above)
     const wasAlreadyDone = !!progress[id];
@@ -2130,11 +2865,13 @@ function renderTopicPage(id){
       else triggerConfetti(rect);
       saving.then(ok => {
         if(ok) return;
+        refreshStatus_();
         if(reviewing) completedAt[id] = previousAt;
         if(!pendingSave_) renderTopicPage(id); // (a sign-in screen is up instead when the session ended)
       });
     }
-    if(next) renderTopicPage(next.ID);
+    if(rn.pending){ localResolveChange_(id); renderRenewalPage(); } // part of the renewal: back to it
+    else if(next) renderTopicPage(next.ID);
     else renderDirectory();
   });
   main.querySelectorAll('.video-toggle-tab').forEach(btn => btn.addEventListener('click', () => {
@@ -2168,13 +2905,23 @@ function renderTopicPage(id){
     refreshGate();
   }));
 
+  const rnBack = document.getElementById('rnBack');
+  if(rnBack) rnBack.addEventListener('click', () => renderRenewalPage());
   const quizCard = document.getElementById('quizLinkCard');
   if(quizCard) quizCard.addEventListener('click', () => renderQuizPage(id, 'review'));
   refreshGate();
+  setupPinnedStage_();
   window.scrollTo(0,0);
 }
 
 function quizCheckHtml_(){
+  const lessons = TOPICS.filter(t => t.Category !== 'Cheat Sheet');
+  const first = lessons.reduce((n, t) => n + usableQuizzes_(t.Quiz).length, 0);
+  const extra = lessons.reduce((n, t) => n + usableQuizzes_(t['Renewal Quiz']).length, 0);
+  const pool = first + extra;
+  return quizCheckHtmlBase_() + `<div class="quiz-check ${pool < 15 ? 'bad' : ''}"><b>Renewal test:</b> it draws 15 questions from a pool of ${pool} (${first} first-time + ${extra} renewal-only)${pool < 15 ? '. That is fewer than 15, so the test would be shorter than promised.' : '.'}</div>`;
+}
+function quizCheckHtmlBase_(){
   const lessons = TOPICS.filter(t => t.Category !== 'Cheat Sheet');
   if(!lessons.some(t => 'Quiz' in t)) return `<div class="quiz-check bad"><b>Quizzes:</b> the lessons tab has no column named \u201cQuiz\u201d. Check that cell O1 says exactly Quiz.</div>`;
   const withQuiz = lessons.filter(t => String(t.Quiz || '').trim());
@@ -2194,6 +2941,7 @@ function renderAdmin(){
       <button class="add-topic-btn" id="addTopicBtn">+ Add New Topic</button>
       <button class="admin-btn" id="agentProgressBtn">Agent Progress</button>
       <button class="admin-btn" id="announceBtn">Send What’s New now</button>
+      ${myStatus && myStatus.testTools ? '<button class="admin-btn" id="testToolsBtn">Test tools</button>' : ''}
       <button class="admin-btn" id="signOutBtn" style="align-self:center;">\u21BA Sign out (${currentAgent ? currentAgent.email : 'not signed in'})</button>
     </div>
     <div id="deletedSection"></div>
@@ -2233,6 +2981,8 @@ function renderAdmin(){
   wireDragReorder(list);
   document.getElementById('addTopicBtn').addEventListener('click', () => renderEditForm(null));
   document.getElementById('agentProgressBtn').addEventListener('click', () => renderAgentProgressList());
+  const ttBtn = document.getElementById('testToolsBtn');
+  if(ttBtn) ttBtn.addEventListener('click', () => renderTestTools_());
   document.getElementById('announceBtn').addEventListener('click', async () => {
     if(!confirm('Send the What\u2019s New email now to everyone it concerns? It follows the same on/off switch as every email to agents.')) return;
     const r = await postToSheet({ action: 'announceNow', idToken: currentAgent ? currentAgent.idToken : null });
@@ -2352,6 +3102,7 @@ function wireDragReorder(list){
 async function renderDeletedSection(){
   const deleted = await loadDeleted();
   const el = document.getElementById('deletedSection');
+  if(!el) return;
   if(!deleted.length){ el.innerHTML = ''; return; }
   el.innerHTML = `
     <div style="margin:20px 0 10px;">
@@ -2376,7 +3127,7 @@ function slugify(title){
 }
 
 function renderEditForm(id){
-  const t = id ? TOPICS.find(x => x.ID === id) : { ID:'', Topic:'', Category: CATEGORY_ORDER[0], Platform:'ReChat', Order: 999, 'Page Content':'', 'Video Links':'', Quiz:'', Flag:'', 'Change Note':'' };
+  const t = id ? TOPICS.find(x => x.ID === id) : { ID:'', Topic:'', Category: CATEGORY_ORDER[0], Platform:'ReChat', Order: 999, 'Page Content':'', 'Video Links':'', Quiz:'', 'Renewal Quiz':'', Flag:'', 'Change Note':'' };
   const isNew = !id;
   const main = document.getElementById('main');
   main.innerHTML = `
@@ -2425,6 +3176,11 @@ function renderEditForm(id){
         </div>
         <textarea class="field-input" id="fQuiz" style="min-height:90px;">${t['Quiz'] || ''}</textarea>
       </div>
+      <div>
+        <label class="field-label">Renewal quiz (optional)</label>
+        <div class="format-help">Extra questions used only by the 6-month renewal test, in the same format as the Quiz above. Together with the Quiz questions they form the pool the test draws from. Agents never see these with their answers.</div>
+        <textarea class="field-input" id="fRenewalQuiz" style="min-height:90px;">${t['Renewal Quiz'] || ''}</textarea>
+      </div>
       <div style="display:flex; gap:14px; align-items:flex-start; flex-wrap:wrap;">
         <div style="flex:0 0 190px;">
           <label class="field-label">Announce this change</label>
@@ -2461,6 +3217,7 @@ function renderEditForm(id){
       'Page Content': document.getElementById('fContent').value,
       'Video Links': document.getElementById('fVideo').value,
       'Quiz': document.getElementById('fQuiz').value,
+      'Renewal Quiz': document.getElementById('fRenewalQuiz').value,
       'Flag': document.getElementById('fFlag').value,
       'Change Note': document.getElementById('fNote').value,
       'Source': t.Source || '', 'Status': 'Reviewed OK', __new: isNew
@@ -2569,7 +3326,7 @@ async function startApp(){
     setLoadingStage_(1);
     // The lessons and this person's progress don't depend on each other, so ask for both at once.
     const topicsReady = loadTopicsFromSheet().then(() => setLoadingStage_(2));
-    await Promise.all([topicsReady, loadProgress()]);
+    await Promise.all([topicsReady, loadProgress(), loadStatus()]);
     if(pendingSave_){
       const p = pendingSave_;
       pendingSave_ = null;
@@ -2581,6 +3338,7 @@ async function startApp(){
     if(chatSub) chatSub.textContent = `Grounded in your ${SEQUENCE.length} reviewed lessons only`;
     applyAdminVisibility_();
     renderDirectory();
+    routeFromHash_(); // a link from an email: #certificate or #renew
     setLoadingStage_(4);
   }catch(e){
     // Whatever broke, the person should see a real message, not a logo
