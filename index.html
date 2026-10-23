@@ -422,6 +422,10 @@
   .flag-callout .fc-text b{ color:#ffe9a8; }
   .flag-callout .fc-hint{ color:var(--ink-muted); font-size:.84rem; margin-top:4px; }
 
+  .build-stamp{ text-align:center; font-family:'IBM Plex Mono',monospace; font-size:0.62rem; letter-spacing:0.08em; color:var(--ink-faint); opacity:0.5; padding:28px 0 0; }
+  .quiz-check{ margin-top:12px; font-size:0.84rem; line-height:1.5; color:var(--ink-muted); }
+  .quiz-check b{ color:var(--ink); }
+  .quiz-check.bad{ color:#ffb7ba; }
   /* ---- Quiz ---- */
   .quiz-block{ margin:44px 0 8px; max-width:760px; padding:26px 26px 12px; border:1px solid var(--line-strong); border-radius:16px; background:rgba(0,0,0,0.14); transition:border-color .2s; }
   .quiz-block.complete{ border-color:rgba(122,185,66,.65); }
@@ -445,6 +449,17 @@
   .quiz-opt.correct{ background:rgba(122,185,66,.18); border-color:var(--green); color:#fff; cursor:default; }
   .quiz-opt.correct .quiz-letter{ color:var(--green); }
   .quiz-opt.dim{ opacity:.42; cursor:default; }
+  .quiz-lesson-name{ color:var(--ink-muted); font-size:1.02rem; margin:-6px 0 6px; }
+  .quiz-link-card{ display:flex; align-items:center; justify-content:space-between; gap:16px; width:100%; max-width:680px; margin:40px 0 0; padding:16px 20px; border-radius:14px; border:1px solid var(--line-strong); background:rgba(255,255,255,0.04); color:var(--ink); font:inherit; text-align:left; cursor:pointer; transition:border-color .15s, background .15s; }
+  .quiz-link-card:hover{ border-color:var(--green); background:rgba(255,255,255,0.08); }
+  .quiz-link-card:focus-visible{ outline:2px solid var(--green); outline-offset:2px; }
+  .quiz-link-card .qlc-eyebrow{ display:block; font-family:'IBM Plex Mono',monospace; font-size:0.7rem; letter-spacing:0.16em; text-transform:uppercase; color:var(--green); margin-bottom:4px; }
+  .quiz-link-card .qlc-text{ font-size:0.95rem; }
+  .quiz-link-card .qlc-go{ color:var(--green); font-weight:600; font-size:0.88rem; white-space:nowrap; }
+  @media (max-width:520px){ .quiz-link-card{ flex-direction:column; align-items:flex-start; } }
+  .quiz-review .quiz-opt{ cursor:default; }
+  .quiz-review .quiz-opt.dim:hover{ background:rgba(255,255,255,0.04); border-color:var(--line-strong); }
+  .quiz-review .quiz-opt.correct:hover{ background:rgba(122,185,66,.18); border-color:var(--green); }
   @keyframes quizShake{ 0%,100%{ transform:translateX(0); } 25%{ transform:translateX(-5px); } 75%{ transform:translateX(5px); } }
   @media (prefers-reduced-motion: reduce){ .quiz-opt.wrong, .quiz-block.pulse{ animation:none; } }
   @media (max-width:600px){ .quiz-block{ padding:20px 16px 6px; } }
@@ -754,7 +769,7 @@ async function saveProgress(topicId, completed, extra){
   updateGlobalProgress();
   if(isSessionProblem_(data && data.error)){
     // The session ended. Keep what they just did, sign in again, then save it.
-    pendingSave_ = { topicId, completed: !!completed, email: currentAgent.email };
+    pendingSave_ = { topicId, completed: !!completed, email: currentAgent.email, extra: extra || {} };
     requireSignInAgain_('Your session has ended. Please sign in again and your progress will be saved.');
   } else {
     showToast_('We couldn\u2019t save your progress. Please try again.');
@@ -782,7 +797,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-21-A'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-22-C'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1657,6 +1672,21 @@ function renderQuizHtml_(list){
     </section>`;
 }
 
+function renderQuizReviewHtml_(list, intro){
+  return `
+    <section class="quiz-block complete quiz-review" id="quizReview" aria-label="Your quiz answers">
+      <div class="quiz-head"><span class="quiz-eyebrow">Your quiz answers</span><span class="quiz-count">All correct \u2713</span></div>
+      <p class="quiz-intro">${intro || 'You answered every question correctly. They stay here in case you want to look back.'}</p>
+      ${list.map((q, qi) => `
+        <div class="quiz-q solved">
+          <div class="quiz-q-text"><span class="quiz-q-num">${qi + 1}</span><span>${escapeHtml(q.question)}</span></div>
+          <div class="quiz-options">
+            ${q.options.map(o => `<div class="quiz-opt ${o.correct ? 'correct' : 'dim'}"><span class="quiz-letter">${o.letter}</span><span class="quiz-opt-text">${escapeHtml(o.text)}</span></div>`).join('')}
+          </div>
+        </div>`).join('')}
+    </section>`;
+}
+
 function iconFor(label){
   if(/contact|crm|tag/i.test(label)) return '\u{1F465}';
   if(/deal|transaction|document/i.test(label)) return '\u{1F4C4}';
@@ -1724,6 +1754,7 @@ function renderDirectory(){
       </div>
     </div>
     <div id="categoryList"></div>
+    <div class="build-stamp">Build ${BUILD_ID}</div>
     <div class="footer-space"></div>`;
   document.getElementById('searchInput').addEventListener('input', e => renderResults(e.target.value));
   renderResults('');
@@ -1868,7 +1899,105 @@ const DIAGRAM_TOPIC_ID = 'LP-RECHAT-FLOW';
 const DIAGRAM_TOPIC_HTML = "<div class=\"lprcflow\">\n<style>\n  .lprcflow{\n    --lprcflow-bg-top: #0c4650;\n    --lprcflow-bg-bottom: #082e34;\n    --lprcflow-green: #6fcf6f;\n    --lprcflow-red: #d9706e;\n    --lprcflow-ink: #f5f3ee;\n    --lprcflow-ink-muted: #cdd8d4;\n    --lprcflow-ink-faint: #9bb3ae;\n    --lprcflow-border: rgba(245,243,238,0.14);\n\n    background: transparent;\n    color: var(--lprcflow-ink);\n    font-family: -apple-system, BlinkMacSystemFont, 'Inter', Helvetica, Arial, sans-serif;\n    padding: 26px 48px;\n    box-sizing: border-box;\n  }\n  .lprcflow *{ box-sizing:border-box; }\n\n  .lprcflow .lprcflow-eyebrow{\n    font-family:'IBM Plex Mono',monospace; font-size:0.74rem; letter-spacing:0.05em;\n    text-transform:uppercase; color:var(--lprcflow-ink-faint); margin-bottom:10px; text-align:center;\n  }\n  .lprcflow h1{\n    font-family:'Fraunces',serif; font-size:1.85rem; font-weight:500; line-height:1.3;\n    margin:0 0 8px; text-align:center; color:var(--lprcflow-ink);\n  }\n  .lprcflow .lprcflow-dek{\n    text-align:center; font-size:0.92rem; color:var(--lprcflow-ink-muted);\n    max-width:560px; margin:0 auto 20px; line-height:1.6;\n  }\n  .lprcflow .lprcflow-wrap{ max-width:1100px; margin:0 auto; }\n\n  /* --- The animated visual: circles + arcs + dots, nothing else drawn\n     on top of it. Its only job is to show direction and motion. --- */\n  .lprcflow .lprcflow-diagram{ position:relative; margin-bottom:8px; }\n  .lprcflow .lprcflow-mobile-scroll-hint{ display:none; }\n  @media (max-width:700px){\n    .lprcflow .lprcflow-diagram{ overflow-x:auto; overflow-y:hidden; -webkit-overflow-scrolling:touch; }\n    .lprcflow .lprcflow-diagram-inner{ width:700px; }\n    .lprcflow .lprcflow-mobile-scroll-hint{\n      display:block; text-align:center; font-size:11.5px; color:var(--lprcflow-ink-faint);\n      letter-spacing:0.02em; margin-bottom:10px;\n    }\n  }\n  .lprcflow .lprcflow-node-circle{\n    fill:#0e3339; stroke:rgba(127,185,85,0.4); stroke-width:1;\n  }\n  .lprcflow .lprcflow-node-label{\n    font-family:'Fraunces',serif; font-size:27px; font-weight:400; fill:var(--lprcflow-ink); text-anchor:middle;\n  }\n  .lprcflow .lprcflow-node-sub{\n    font-family:-apple-system,'Inter',sans-serif; font-size:11px; letter-spacing:0.08em;\n    fill:var(--lprcflow-ink-faint); text-anchor:middle; text-transform:uppercase; font-weight:500;\n  }\n  .lprcflow .lprcflow-arc-label{\n    font-family:-apple-system,'Inter',sans-serif; font-size:13px; letter-spacing:0.02em;\n    text-anchor:middle; font-weight:700;\n  }\n  .lprcflow .lprcflow-arc-label.lprcflow-green{ fill:var(--lprcflow-green); }\n  .lprcflow .lprcflow-arc-label.lprcflow-red{ fill:var(--lprcflow-red); }\n\n  .lprcflow .lprcflow-path{ fill:none; stroke-width:1.75; }\n  .lprcflow .lprcflow-path.lprcflow-green{ stroke:var(--lprcflow-green); opacity:0.58; }\n  .lprcflow .lprcflow-path.lprcflow-red{ stroke:var(--lprcflow-red); opacity:0.38; stroke-width:1.5; }\n\n  .lprcflow .lprcflow-dot{\n    position:absolute; top:0; left:0; white-space:nowrap;\n    padding:2.5px 8px; border-radius:10px; font-size:10.5px; font-weight:700;\n    letter-spacing:0.01em; box-shadow:0 2px 6px rgba(0,0,0,0.3);\n    offset-rotate: 0deg;\n  }\n  .lprcflow .lprcflow-dot.lprcflow-green{ background:#bdeab0; color:#17390f; }\n  .lprcflow .lprcflow-dot.lprcflow-red{ background:#f3c7c5; color:#4a1715; }\n  @keyframes lprcflow-flow{\n    from{ offset-distance:0%; opacity:0; }\n    6%{ opacity:1; }\n    94%{ opacity:1; }\n    to{ offset-distance:100%; opacity:0; }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .lprcflow .lprcflow-dot{ animation:none !important; opacity:0 !important; }\n  }\n\n  /* --- The data, in normal document flow below the diagram. Flow\n     layout means these blocks physically cannot overlap each other,\n     the diagram, or anything else, at any width. --- */\n  .lprcflow .lprcflow-data{\n    display:grid;\n    grid-template-columns: 1fr 1fr;\n    gap:28px 40px;\n    margin-top:12px;\n  }\n  .lprcflow .lprcflow-block{ border-top:1px solid var(--lprcflow-border); padding-top:18px; }\n  .lprcflow .lprcflow-block-title{\n    font-size:12px; font-weight:700; letter-spacing:0.03em; text-transform:uppercase;\n    margin-bottom:14px;\n  }\n  .lprcflow .lprcflow-block-title.lprcflow-green{ color:var(--lprcflow-green); }\n  .lprcflow .lprcflow-block-title.lprcflow-red{ color:var(--lprcflow-red); }\n\n  .lprcflow .lprcflow-cat{ margin-bottom:12px; }\n  .lprcflow .lprcflow-cat:last-child{ margin-bottom:0; }\n  .lprcflow .lprcflow-cat-label{\n    font-size:12px; font-weight:700; color:var(--lprcflow-ink-faint); margin-bottom:5px;\n  }\n  .lprcflow .lprcflow-cat ul{ list-style:none; margin:0; padding:0; }\n  .lprcflow .lprcflow-cat li{\n    font-size:15px; line-height:1.65; color:var(--lprcflow-ink);\n  }\n  .lprcflow .lprcflow-block--red .lprcflow-cat li{ color:var(--lprcflow-ink-muted); font-size:14px; }\n  .lprcflow .lprcflow-caveat{ color:var(--lprcflow-green); font-weight:600; }\n  .lprcflow .lprcflow-caveat-red{ color:var(--lprcflow-red) !important; }\n\n  .lprcflow .lprcflow-scrollcue{\n    display:flex; flex-direction:column; align-items:center; gap:4px;\n    text-align:center; font-size:12px; color:var(--lprcflow-ink-faint);\n    letter-spacing:0.02em; margin:12px 0 8px;\n  }\n  .lprcflow .lprcflow-scrollcue svg{\n    animation:lprcflow-nudge 1.8s ease-in-out infinite;\n  }\n  @keyframes lprcflow-nudge{\n    0%, 100%{ transform:translateY(0); opacity:0.55; }\n    50%{ transform:translateY(4px); opacity:1; }\n  }\n  @media (prefers-reduced-motion: reduce){\n    .lprcflow .lprcflow-scrollcue svg{ animation:none; }\n  }\n\n  .lprcflow .lprcflow-legend{\n    display:flex; justify-content:center; gap:32px; margin-top:36px;\n    font-size:0.84rem; color:var(--lprcflow-ink-faint);\n  }\n  .lprcflow .lprcflow-legend span{ display:inline-flex; align-items:center; gap:8px; }\n  .lprcflow .lprcflow-legend i{ width:9px; height:9px; border-radius:50%; display:inline-block; }\n  .lprcflow .lprcflow-legend i.lprcflow-green{ background:var(--lprcflow-green); }\n  .lprcflow .lprcflow-legend i.lprcflow-red{ background:var(--lprcflow-red); }\n\n  @media (max-width: 640px){\n    .lprcflow .lprcflow-data{ grid-template-columns:1fr; }\n  }\n</style>\n\n  <div class=\"lprcflow-eyebrow\">2CRRE Tech Training \u2014 Reference Diagram</div>\n  <h1>How a contact flows between Luxury Presence and ReChat</h1>\n  <p class=\"lprcflow-dek\">Website leads move one way. Ongoing contact management moves the other. A few things stay put on each platform.</p>\n\n  <div class=\"lprcflow-wrap\">\n\n    <div class=\"lprcflow-mobile-scroll-hint\">Scroll sideways to see the full diagram \u2194</div>\n    <div class=\"lprcflow-diagram\">\n     <div class=\"lprcflow-diagram-inner\">\n      <svg class=\"lprcflow-svg\" viewBox=\"0 0 1100 630\" style=\"width:100%; height:auto; overflow:visible;\">\n        <defs>\n          <marker id=\"lprcflow-arrowGreen\" markerWidth=\"9\" markerHeight=\"9\" refX=\"5\" refY=\"2.5\" orient=\"auto\">\n            <path d=\"M0,0 L5,2.5 L0,5 Z\" fill=\"#6fcf6f\"/>\n          </marker>\n          <marker id=\"lprcflow-arrowRed\" markerWidth=\"9\" markerHeight=\"9\" refX=\"5\" refY=\"2.5\" orient=\"auto\">\n            <path d=\"M0,0 L5,2.5 L0,5 Z\" fill=\"#d9706e\"/>\n          </marker>\n        </defs>\n\n        <path class=\"lprcflow-path lprcflow-green\" d=\"M 300 340 C 470 580, 630 580, 800 340\" marker-end=\"url(#lprcflow-arrowGreen)\"/>\n        <path class=\"lprcflow-path lprcflow-green\" d=\"M 760 220 C 640 150, 460 150, 340 220\" marker-end=\"url(#lprcflow-arrowGreen)\"/>\n        <path class=\"lprcflow-path lprcflow-red\" d=\"M 195 185 C 140 150, 115 110, 100 70\" marker-end=\"url(#lprcflow-arrowRed)\"/>\n        <path class=\"lprcflow-path lprcflow-red\" d=\"M 905 185 C 960 150, 985 110, 1000 70\" marker-end=\"url(#lprcflow-arrowRed)\"/>\n\n        <text class=\"lprcflow-arc-label lprcflow-green\" x=\"550\" y=\"410\">Moves into ReChat</text>\n        <text class=\"lprcflow-arc-label lprcflow-green\" x=\"550\" y=\"140\">Moves into Luxury Presence</text>\n        <text class=\"lprcflow-arc-label lprcflow-red\" x=\"65\" y=\"45\">Stays in LP</text>\n        <text class=\"lprcflow-arc-label lprcflow-red\" x=\"1035\" y=\"45\">Stays in ReChat</text>\n\n        <circle class=\"lprcflow-node-circle\" cx=\"275\" cy=\"275\" r=\"108\"/>\n        <text class=\"lprcflow-node-label\" x=\"275\" y=\"265\">Luxury</text>\n        <text class=\"lprcflow-node-label\" x=\"275\" y=\"297\">Presence</text>\n        <text class=\"lprcflow-node-sub\" x=\"275\" y=\"326\">Where website</text>\n        <text class=\"lprcflow-node-sub\" x=\"275\" y=\"342\">leads enter</text>\n\n        <circle class=\"lprcflow-node-circle\" cx=\"825\" cy=\"275\" r=\"108\"/>\n        <text class=\"lprcflow-node-label\" x=\"825\" y=\"281\">ReChat</text>\n        <text class=\"lprcflow-node-sub\" x=\"825\" y=\"313\">Source of truth</text>\n      </svg>\n      <div class=\"lprcflow-dotlayer\" style=\"position:absolute; inset:0; pointer-events:none;\"></div>\n     </div>\n    </div>\n\n    <div class=\"lprcflow-scrollcue\">\n      <span>Full item-by-item breakdown below</span>\n      <svg width=\"14\" height=\"8\" viewBox=\"0 0 14 8\"><path d=\"M1 1l6 6 6-6\" stroke=\"currentColor\" stroke-width=\"1.6\" fill=\"none\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></svg>\n    </div>\n\n    <div class=\"lprcflow-data\">\n      <div class=\"lprcflow-block\">\n        <div class=\"lprcflow-block-title lprcflow-green\">New website lead enters ReChat with</div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact info</div>\n          <ul><li>Name</li><li>Email</li><li>Phone number</li></ul>\n        </div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Website activity</div>\n          <ul>\n            <li>Inquiries made on the website</li>\n            <li>Favorite properties</li>\n            <li>Saved search</li>\n            <li>Showing requests</li>\n            <li>Listing views</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block\">\n        <div class=\"lprcflow-block-title lprcflow-green\">Ongoing contact management syncs back to LP</div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact updates</div>\n          <ul><li>Any edits to the contact</li><li>Notes you add</li><li>Tags you add</li></ul>\n        </div>\n        <div class=\"lprcflow-cat\">\n          <div class=\"lprcflow-cat-label\">Contact lifecycle</div>\n          <ul>\n            <li>New contacts created in ReChat</li>\n            <li><span class=\"lprcflow-caveat\">Deleting</span> a contact in ReChat removes it in Luxury Presence too</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block lprcflow-block--red\">\n        <div class=\"lprcflow-block-title lprcflow-red\">Stays in Luxury Presence</div>\n        <div class=\"lprcflow-cat\">\n          <ul>\n            <li><span class=\"lprcflow-caveat lprcflow-caveat-red\">Editing</span> a contact directly in Luxury Presence stays in Luxury Presence only</li>\n            <li>Messages in Collaborations</li>\n            <li>Messages from the AI Lead Nurturer</li>\n            <li>Enriched Data</li>\n            <li>LP Smart Actions</li>\n          </ul>\n        </div>\n      </div>\n\n      <div class=\"lprcflow-block lprcflow-block--red\">\n        <div class=\"lprcflow-block-title lprcflow-red\">Stays in ReChat</div>\n        <div class=\"lprcflow-cat\">\n          <ul><li>Transactions</li><li>Open Houses</li></ul>\n        </div>\n      </div>\n    </div>\n\n    <div class=\"lprcflow-legend\">\n      <span><i class=\"lprcflow-green\"></i> Syncs between platforms</span>\n      <span><i class=\"lprcflow-red\"></i> Stays on that platform only</span>\n    </div>\n  </div>\n\n";
 const DIAGRAM_TOPIC_JS = "(function(){\n  var root = document.currentScript.closest('.lprcflow');\n  if(!root) return;\n\n  var instanceId = 'lprcflow-' + Math.random().toString(36).slice(2, 9);\n  root.querySelectorAll('marker[id], radialGradient[id]').forEach(function(el){\n    var oldId = el.id;\n    var newId = instanceId + '-' + oldId;\n    el.id = newId;\n    root.querySelectorAll('[marker-end=\"url(#' + oldId + ')\"]').forEach(function(ref){\n      ref.setAttribute('marker-end', 'url(#' + newId + ')');\n    });\n    root.querySelectorAll('[fill=\"url(#' + oldId + ')\"]').forEach(function(ref){\n      ref.setAttribute('fill', 'url(#' + newId + ')');\n    });\n  });\n\n  var PATHS = {\n    arcDown:    \"M 300 340 C 470 580, 630 580, 800 340\",\n    arcUp:      \"M 760 220 C 640 150, 460 150, 340 220\",\n    arcLeftOut: \"M 195 185 C 140 150, 115 110, 100 70\",\n    arcRightOut:\"M 905 185 C 960 150, 985 110, 1000 70\"\n  };\n  // Each dot is one specific thing, not an abstract particle -- counts\n  // match the real item lists below exactly, and a hover tooltip names\n  // which item that dot is, in the same order the items are listed.\n  // Full names (used as the hover tooltip and matching the lists below)\n  // vs. short labels (what actually fits readably inside a moving bubble).\n  var ITEMS = {\n    arcDown: ['Name, email, and phone number', 'Inquiries made on the website', 'Favorite properties', 'Saved search', 'Showing requests', 'Listing views'],\n    arcUp: ['Any edits to the contact', 'Notes you add', 'Tags you add', 'New contacts created in ReChat', 'Deleted contacts'],\n    arcLeftOut: ['Edits made directly in LP', 'Messages in Collaborations', 'Messages from the AI Lead Nurturer', 'Enriched Data', 'LP Smart Actions'],\n    arcRightOut: ['Transactions', 'Open Houses']\n  };\n  var SHORT = {\n    arcDown: ['Contact Info', 'Inquiry', 'Favorite Listings', 'Saved Searches', 'Showing Requests', 'Listing Views'],\n    arcUp: ['Contact Edits', 'Contact Notes', 'Tags', 'New Contact', 'Deletion'],\n    arcLeftOut: ['Contact Edit', 'Collaboration Messages', 'AI Nurturer Msg', 'Enriched Data', 'Smart Action'],\n    arcRightOut: ['Transaction', 'Open House']\n  };\n  var DOT_COUNTS = { arcDown: 6, arcUp: 5, arcLeftOut: 5, arcRightOut: 2 };\n  var COLORS = { arcDown: 'lprcflow-green', arcUp: 'lprcflow-green', arcLeftOut: 'lprcflow-red', arcRightOut: 'lprcflow-red' };\n  var DURATIONS = { arcDown: 6.5, arcUp: 4.8, arcLeftOut: 4.8, arcRightOut: 3.0 };\n\n  var layer = root.querySelector('.lprcflow-dotlayer');\n  var svg = root.querySelector('.lprcflow-svg');\n\n  function placeDots(){\n    layer.innerHTML = '';\n    var vb = svg.viewBox.baseVal;\n    var rect = svg.getBoundingClientRect();\n    var scale = rect.width / vb.width;\n    layer.style.transform = 'scale(' + scale + ')';\n    layer.style.transformOrigin = 'top left';\n    layer.style.width = vb.width + 'px';\n    layer.style.height = vb.height + 'px';\n\n    Object.keys(PATHS).forEach(function(key){\n      var count = DOT_COUNTS[key];\n      var duration = DURATIONS[key];\n      var items = ITEMS[key];\n      var shorts = SHORT[key];\n      for(var i = 0; i < count; i++){\n        var dot = document.createElement('div');\n        dot.className = 'lprcflow-dot ' + COLORS[key];\n        dot.textContent = shorts[i];\n        dot.title = items[i];\n        dot.style.offsetPath = \"path('\" + PATHS[key] + \"')\";\n        dot.style.animation = 'lprcflow-flow ' + duration + 's linear infinite backwards';\n        dot.style.animationDelay = (i * duration / count) + 's';\n        layer.appendChild(dot);\n      }\n    });\n  }\n\n  placeDots();\n  window.addEventListener('resize', placeDots);\n})();\n";
 
+const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
+function stopReadAloud_(){
+  try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
+  ttsState = { utter: null, words: [], playing: false };
+}
+function quizLinkCardHtml_(n){
+  return `<button type="button" class="quiz-link-card" id="quizLinkCard">
+    <span><span class="qlc-eyebrow">Quiz</span><span class="qlc-text">${n} ${n === 1 ? 'question' : 'questions'} \u00b7 All correct \u2713</span></span>
+    <span class="qlc-go">View your answers \u2192</span></button>`;
+}
+
+// The quiz page. mode: (none) = take the quiz | 'review' = lesson already complete, read-only
+// | 'retry' = a save failed, every answer is already right, so just press the button again.
+function renderQuizPage(id, mode){
+  stopReadAloud_();
+  const t = TOPICS.find(x => x.ID === id);
+  const list = usableQuizzes_(t['Quiz']);
+  if(!list.length){ renderTopicPage(id); return; }
+  const idx = SEQUENCE.findIndex(x => x.ID === id);
+  const next = idx >= 0 && idx < SEQUENCE.length - 1 ? SEQUENCE[idx + 1] : null;
+  const answered = mode === 'review' || mode === 'retry';
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to the lesson</button>
+    <div class="lesson-meta">${t.Category} \u00b7 Step ${idx + 1} of ${SEQUENCE.length} \u00b7 Quiz</div>
+    <div class="page-title-row">
+      <h1 class="page-title">Quiz</h1>
+      ${logoBadge(t)}
+    </div>
+    <p class="quiz-lesson-name">${escapeHtml(t.Topic)}</p>
+    ${answered ? renderQuizReviewHtml_(list, mode === 'retry' ? 'Every answer is right. Press Mark Complete to save it.' : '') : renderQuizHtml_(list)}
+    <button class="complete-next-btn" id="completeBtn">
+      <span class="cnb-main"></span>
+      <span class="cnb-sub">${next ? `Next: ${next.Topic}` : 'Back to Home'} \u2192</span>
+    </button>
+    <div class="build-stamp">Build ${BUILD_ID}</div>
+    <div class="footer-space"></div>`;
+
+  const btn = document.getElementById('completeBtn'), label = btn.querySelector('.cnb-main');
+  const armedAt = Date.now() + 700; // a double-tap on the lesson's button must never land on this one
+  let quizDone = answered;
+  function refresh(){
+    btn.classList.toggle('locked', !quizDone);
+    btn.classList.toggle('done', mode === 'review');
+    label.textContent = !quizDone ? '\u{1F512} Answer every question' : (mode === 'review' ? '\u2713 Completed' : 'Mark Complete');
+  }
+  const goNext = () => { if(next) renderTopicPage(next.ID); else renderDirectory(); };
+  document.getElementById('backBtn').addEventListener('click', () => renderTopicPage(id));
+
+  if(!answered){
+    const quizEl = document.getElementById('quizBlock');
+    const solved = new Set();
+    quizEl.addEventListener('click', ev => {
+      const opt = ev.target.closest('.quiz-opt');
+      if(!opt || opt.disabled) return;
+      const qi = Number(opt.dataset.q), oi = Number(opt.dataset.o);
+      if(solved.has(qi)) return;
+      if(list[qi].options[oi].correct){
+        solved.add(qi);
+        opt.classList.add('correct');
+        quizEl.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(b => { b.disabled = true; if(b !== opt) b.classList.add('dim'); });
+        quizEl.querySelector(`.quiz-q[data-q="${qi}"]`).classList.add('solved');
+      } else {
+        quizMissesById_[id] = (quizMissesById_[id] || 0) + 1;
+        opt.classList.add('wrong');
+        opt.disabled = true;
+      }
+      const done = solved.size === list.length;
+      document.getElementById('quizCount').textContent = done ? 'All correct \u2713' : `${solved.size} of ${list.length} correct`;
+      if(done){ quizDone = true; quizEl.classList.add('complete'); }
+      refresh();
+    });
+  }
+
+  btn.addEventListener('click', (e) => {
+    if(btn.classList.contains('locked')){
+      const el = document.getElementById('quizBlock');
+      if(el){ el.scrollIntoView({ behavior: 'smooth', block: 'center' }); el.classList.add('pulse'); setTimeout(() => el.classList.remove('pulse'), 2400); }
+      return;
+    }
+    if(mode === 'review'){ goNext(); return; }
+    if(Date.now() < armedAt) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    // Move on at once; the save finishes in the background. If it fails, saveProgress undoes the
+    // checkmark and says why, and we bring the person back here with every answer still right.
+    const saving = saveProgress(id, true, { misses: quizMissesById_[id] || 0 });
+    triggerConfetti(rect);
+    saving.then(ok => {
+      if(ok){ delete quizMissesById_[id]; return; }
+      if(!pendingSave_) renderQuizPage(id, 'retry'); // (a sign-in screen is up instead when the session ended)
+    });
+    goNext();
+  });
+  refresh();
+  window.scrollTo(0, 0);
+}
+
 function renderTopicPage(id){
+  stopReadAloud_();
   currentPageGroups = []; // reset before generating this page's content, so gating only reflects THIS page's groups
   const t = TOPICS.find(x => x.ID === id);
   const hasVideo = !!(t['Video Links'] && t['Video Links'].trim());
@@ -1888,11 +2017,12 @@ function renderTopicPage(id){
     </div>` : '';
   const linksHtml = renderReferenceLinksHtml(t) + renderAppLinksHtml(t);
 
-  // Quiz: only for a first completion (a finished lesson isn't re-quizzed).
-  const quizList = progress[id] ? [] : usableQuizzes_(t['Quiz']);
-  let quizDone = quizList.length === 0;
-  let quizMisses = 0;
-  const quizHtml = quizList.length ? renderQuizHtml_(quizList) : '';
+  // Quizzes have their own page. The lesson ends with "Continue to the quiz"; once the lesson is
+  // complete, a small card at the bottom opens the same questions read-only, with the right answers.
+  const allQuiz = usableQuizzes_(t['Quiz']);
+  const needsQuiz = allQuiz.length > 0 && !progress[id];
+  const armedAt = Date.now() + 700; // a double-tap on the previous lesson's button must never land on this one
+  const quizHtml = (allQuiz.length && progress[id]) ? quizLinkCardHtml_(allQuiz.length) : '';
   const fStatus = flagStatus_(t);
   const calloutHtml = fStatus ? flagCalloutHtml_(t, fStatus) : '';
 
@@ -1946,6 +2076,7 @@ function renderTopicPage(id){
       <span class="cnb-main">Mark Complete</span>
       <span class="cnb-sub">${next ? `Next: ${next.Topic}` : 'Back to Home'} \u2192</span>
     </button>
+    <div class="build-stamp">Build ${BUILD_ID}</div>
     <div class="footer-space"></div>`;
   document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
   if('speechSynthesis' in window) window.speechSynthesis.getVoices();
@@ -1965,44 +2096,43 @@ function renderTopicPage(id){
   }
 
   // One place decides what the big button says and whether it is locked:
-  // videos first, then the quiz, then "Mark Complete" (or "Mark as reviewed" for an updated lesson).
+  // videos first, then "Continue to the quiz" (when the lesson has one), then "Mark Complete"
+  // (or "Mark as reviewed" for an updated lesson).
   function refreshGate(){
     const btn = document.getElementById('completeBtn');
     if(!btn) return;
-    const label = btn.querySelector('.cnb-main');
+    const label = btn.querySelector('.cnb-main'), sub = btn.querySelector('.cnb-sub');
     const videosPending = currentPageGroups.length > 0 && !progress[id] && !allTabsViewedOnPage();
-    const quizPending = quizList.length > 0 && !progress[id] && !quizDone;
     const reviewing = !!progress[id] && flagStatus_(t) === 'updated';
-    btn.classList.toggle('locked', videosPending || quizPending);
+    const nextText = (next ? `Next: ${next.Topic}` : 'Back to Home') + ' \u2192';
+    btn.classList.toggle('locked', videosPending);
     btn.classList.toggle('done', !!progress[id] && !reviewing);
-    if(videosPending) label.textContent = '\u{1F512} Watch all videos first';
-    else if(quizPending) label.textContent = '\u{1F512} Answer the quiz first';
-    else label.textContent = reviewing ? 'Mark as reviewed' : (progress[id] ? '\u2713 Completed' : 'Mark Complete');
-  }
-  function guideToQuiz(){
-    const el = document.getElementById('quizBlock');
-    if(!el) return;
-    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    el.classList.add('pulse');
-    setTimeout(() => el.classList.remove('pulse'), 2400);
+    if(videosPending){ label.textContent = '\u{1F512} Watch all videos first'; sub.textContent = nextText; }
+    else if(needsQuiz){ label.textContent = 'Continue to the quiz'; sub.textContent = allQuiz.length + (allQuiz.length === 1 ? ' question' : ' questions') + ' \u2192'; }
+    else { label.textContent = reviewing ? 'Mark as reviewed' : (progress[id] ? '\u2713 Completed' : 'Mark Complete'); sub.textContent = nextText; }
   }
 
-  document.getElementById('completeBtn').addEventListener('click', async (e) => {
+  document.getElementById('completeBtn').addEventListener('click', (e) => {
     const btn = document.getElementById('completeBtn');
-    if(btn.classList.contains('locked')){
-      const videosPending = currentPageGroups.length > 0 && !progress[id] && !allTabsViewedOnPage();
-      if(videosPending) guideToUnwatchedTab(); else guideToQuiz();
-      return;
-    }
+    if(btn.classList.contains('locked')){ guideToUnwatchedTab(); return; }
+    if(needsQuiz){ renderQuizPage(id); return; } // the lesson is read: on to the quiz
+    if(Date.now() < armedAt) return; // (see armedAt above)
     const wasAlreadyDone = !!progress[id];
     const reviewing = wasAlreadyDone && flagStatus_(t) === 'updated';
     const rect = e.currentTarget.getBoundingClientRect();
     if(!wasAlreadyDone || reviewing){
-      const extra = (!wasAlreadyDone && quizList.length) ? { misses: quizMisses } : {};
-      const saved = await saveProgress(id, true, extra);
-      if(!saved) return; // stay on this lesson; saveProgress has already said why
+      const extra = {};
+      // Move on at once; the save finishes in the background. If it fails, saveProgress
+      // undoes the checkmark and says why, and we bring the person back to this lesson.
+      const previousAt = completedAt[id];
+      const saving = saveProgress(id, true, extra);
       if(reviewing) completedAt[id] = new Date();
       else triggerConfetti(rect);
+      saving.then(ok => {
+        if(ok) return;
+        if(reviewing) completedAt[id] = previousAt;
+        if(!pendingSave_) renderTopicPage(id); // (a sign-in screen is up instead when the session ended)
+      });
     }
     if(next) renderTopicPage(next.ID);
     else renderDirectory();
@@ -2038,38 +2168,28 @@ function renderTopicPage(id){
     refreshGate();
   }));
 
-  if(quizList.length){
-    const quizEl = document.getElementById('quizBlock');
-    const solved = new Set();
-    quizEl.addEventListener('click', ev => {
-      const opt = ev.target.closest('.quiz-opt');
-      if(!opt || opt.disabled) return;
-      const qi = Number(opt.dataset.q), oi = Number(opt.dataset.o);
-      if(solved.has(qi)) return;
-      if(quizList[qi].options[oi].correct){
-        solved.add(qi);
-        opt.classList.add('correct');
-        quizEl.querySelectorAll(`.quiz-opt[data-q="${qi}"]`).forEach(b => { b.disabled = true; if(b !== opt) b.classList.add('dim'); });
-        quizEl.querySelector(`.quiz-q[data-q="${qi}"]`).classList.add('solved');
-      } else {
-        quizMisses++;
-        opt.classList.add('wrong');
-        opt.disabled = true;
-      }
-      const done = solved.size === quizList.length;
-      document.getElementById('quizCount').textContent = done ? 'All correct \u2713' : `${solved.size} of ${quizList.length} correct`;
-      if(done){ quizDone = true; quizEl.classList.add('complete'); }
-      refreshGate();
-    });
-  }
+  const quizCard = document.getElementById('quizLinkCard');
+  if(quizCard) quizCard.addEventListener('click', () => renderQuizPage(id, 'review'));
   refreshGate();
   window.scrollTo(0,0);
+}
+
+function quizCheckHtml_(){
+  const lessons = TOPICS.filter(t => t.Category !== 'Cheat Sheet');
+  if(!lessons.some(t => 'Quiz' in t)) return `<div class="quiz-check bad"><b>Quizzes:</b> the lessons tab has no column named \u201cQuiz\u201d. Check that cell O1 says exactly Quiz.</div>`;
+  const withQuiz = lessons.filter(t => String(t.Quiz || '').trim());
+  if(!withQuiz.length) return `<div class="quiz-check bad"><b>Quizzes:</b> the Quiz column exists but is empty for every lesson.</div>`;
+  const rows = withQuiz.map(t => ({ t, blocks: String(t.Quiz).split(/\n?===\n?/).filter(x => x.trim()).length, usable: usableQuizzes_(t.Quiz).length }));
+  const problems = rows.filter(r => r.usable < r.blocks || r.usable === 0);
+  const total = rows.reduce((n, r) => n + r.usable, 0);
+  return `<div class="quiz-check ${problems.length ? 'bad' : ''}"><b>Quizzes:</b> ${withQuiz.length} lessons have a quiz (${total} questions)${problems.length ? '. Needs attention: ' + problems.map(r => escapeHtml(r.t.Topic) + ' (' + r.usable + ' of ' + r.blocks + ' questions readable)').join('; ') : ', all readable.'}</div>`;
 }
 
 function renderAdmin(){
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="admin-banner">Admin mode \u2014 changes here save directly to the 2CRRE Tech Fundamentals Google Sheet and are live for every agent immediately. <span class="mono" style="opacity:0.7;">Build ${BUILD_ID}</span></div>
+    ${quizCheckHtml_()}
     <div style="display:flex; gap:10px; align-items:center; margin-top:16px;">
       <button class="add-topic-btn" id="addTopicBtn">+ Add New Topic</button>
       <button class="admin-btn" id="agentProgressBtn">Agent Progress</button>
@@ -2447,13 +2567,13 @@ chatInput.addEventListener('keydown', e => { if(e.key === 'Enter') sendChat(); }
 async function startApp(){
   try{
     setLoadingStage_(1);
-    await loadTopicsFromSheet();
-    setLoadingStage_(2);
-    await loadProgress();
+    // The lessons and this person's progress don't depend on each other, so ask for both at once.
+    const topicsReady = loadTopicsFromSheet().then(() => setLoadingStage_(2));
+    await Promise.all([topicsReady, loadProgress()]);
     if(pendingSave_){
       const p = pendingSave_;
       pendingSave_ = null;
-      if(currentAgent && p.email === currentAgent.email) await saveProgress(p.topicId, p.completed);
+      if(currentAgent && p.email === currentAgent.email) await saveProgress(p.topicId, p.completed, p.extra);
     }
     setLoadingStage_(3);
     updateGlobalProgress();
