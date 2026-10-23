@@ -427,6 +427,8 @@
   }
   @media (prefers-reduced-motion:reduce){ .rp-lwin, .split-text{ transition:none !important; } }
 
+  .qc-sample{ display:block; margin-top:6px; font-size:0.78rem; opacity:0.9; }
+  .qc-sample code, .quiz-check code{ font-family:'IBM Plex Mono',monospace; word-break:break-all; }
   /* ---- Certificate ---- */
   .cert-stage{ position:relative; width:100%; max-width:1100px; aspect-ratio:1100 / 850; overflow:hidden; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.45); background:#072f36; margin-top:8px; }
   .cert{ position:absolute; left:0; top:0; width:1100px; height:850px; overflow:hidden; transform-origin:0 0; background:radial-gradient(ellipse 85% 72% at 50% 38%, #126774 0%, #0c4b55 46%, #072e35 100%); color:#f7f5ee; font-family:'Montserrat','Inter',sans-serif; box-sizing:border-box; }
@@ -927,7 +929,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-24-A'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-24-C'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1707,7 +1709,7 @@ function parseQuiz(text){
   if(!text) return null;
   // Split on option boundaries like "A) " that follow a newline or start of text \u2014
   // NOT on a naive letter-exclusion regex, which breaks on real words containing A-D (e.g. "Center").
-  const boundaryRegex = /(?:^|\n)([A-D])\)\s*/g;
+  const boundaryRegex = /(?:^|\n)[ \t\u00a0]*([A-D])\)\s*/g;
   const matches = [...text.matchAll(boundaryRegex)];
   if(!matches.length) return null;
   const question = text.slice(0, matches[0].index).trim();
@@ -1716,8 +1718,8 @@ function parseQuiz(text){
     const start = matches[i].index + matches[i][0].length;
     const end = i+1 < matches.length ? matches[i+1].index : text.length;
     let optText = text.slice(start, end).trim();
-    const correct = /\[CORRECT\]/.test(optText);
-    optText = optText.replace(/\[CORRECT\]/g,'').trim();
+    const correct = /\[CORRECT\]/i.test(optText);
+    optText = optText.replace(/\[CORRECT\]/gi,'').trim();
     options.push({ letter: matches[i][1], correct, text: optText });
   }
   return { question, options };
@@ -2154,6 +2156,8 @@ function setupPinnedStage_(){
 // The server decides everything that matters (who is certified, when, whether the renewal test was
 // passed); this is only the screens. myStatus is that state for the signed-in person.
 let myStatus = null;
+let statusError_ = ''; // what the server said when the status could not be loaded (shown to admins)
+let backendIsOld_ = false; // true when the Apps Script behind the Academy is still the version without certificates
 
 async function loadStatus(){
   if(!currentAgent) return;
@@ -2161,9 +2165,13 @@ async function loadStatus(){
     const res = await fetch(APPS_SCRIPT_URL + '?action=status&session=' + sessionParam_());
     const d = await res.json();
     if(d && d.authRequired){ requireSignInAgain_('Please sign in to continue.'); throw new AuthRequiredError(); }
-    myStatus = (d && d.ok) ? d : null;
+    // An old backend ignores ?action=status and sends the lesson list instead.
+    backendIsOld_ = !!(d && d.ok && Array.isArray(d.topics));
+    myStatus = (d && d.ok && !backendIsOld_) ? d : null;
+    statusError_ = (d && d.ok === false) ? String(d.error || 'unknown error') : '';
   }catch(e){
     if(e instanceof AuthRequiredError) throw e;
+    statusError_ = 'could not reach the server (' + e.message + ')';
     console.error('Could not load certificate status', e); // not fatal: the lessons still work
   }
 }
@@ -2176,6 +2184,14 @@ function daysText_(n){ return n + (n === 1 ? ' day' : ' days'); }
 function friendlyError_(d, fallback){
   const e = d && d.error;
   return (!e || /failed to fetch|networkerror|load failed|network request failed|fetch/i.test(String(e))) ? fallback : e;
+}
+
+// For the Admin screen: say plainly why certificates / Test tools are not there.
+function adminToolsHintHtml_(){
+  if(backendIsOld_) return '<div class="quiz-check bad"><b>Certificates and renewals:</b> the Academy backend (Code.gs) is still the OLD version. Paste the new Code.gs into Apps Script and deploy a new version.</div>';
+  if(!myStatus) return '<div class="quiz-check bad"><b>Certificates and renewals:</b> the status could not be loaded' + (statusError_ ? ' (the server said: <code>' + escapeHtml(statusError_) + '</code>)' : '') + '. Reload the page; if it persists, check the Apps Script deployment.</div>';
+  if(myStatus.testTools === false) return '<div class="quiz-check"><b>Test tools:</b> off. To switch them on, open Apps Script &gt; Project Settings &gt; Script Properties and set <code>TEST_TOOLS_ENABLED</code> to <code>true</code> and <code>TEST_ACCOUNTS</code> to your email. Then reload.</div>';
+  return '';
 }
 
 // While a renewal is open, the "View your answers" pages are hidden (the test is a real test).
@@ -2929,14 +2945,14 @@ function quizCheckHtmlBase_(){
   const rows = withQuiz.map(t => ({ t, blocks: String(t.Quiz).split(/\n?===\n?/).filter(x => x.trim()).length, usable: usableQuizzes_(t.Quiz).length }));
   const problems = rows.filter(r => r.usable < r.blocks || r.usable === 0);
   const total = rows.reduce((n, r) => n + r.usable, 0);
-  return `<div class="quiz-check ${problems.length ? 'bad' : ''}"><b>Quizzes:</b> ${withQuiz.length} lessons have a quiz (${total} questions)${problems.length ? '. Needs attention: ' + problems.map(r => escapeHtml(r.t.Topic) + ' (' + r.usable + ' of ' + r.blocks + ' questions readable)').join('; ') : ', all readable.'}</div>`;
+  return `<div class="quiz-check ${problems.length ? 'bad' : ''}"><b>Quizzes:</b> ${withQuiz.length} lessons have a quiz (${total} questions)${problems.length ? '. Needs attention: ' + problems.map(r => escapeHtml(r.t.Topic) + ' (' + r.usable + ' of ' + r.blocks + ' questions readable)').join('; ') + '. <span class="qc-sample">The first unreadable cell begins: <code>' + escapeHtml(JSON.stringify(String(problems[0].t.Quiz).slice(0, 110))) + '</code></span>' : ', all readable.'}</div>`;
 }
 
 function renderAdmin(){
   const main = document.getElementById('main');
   main.innerHTML = `
     <div class="admin-banner">Admin mode \u2014 changes here save directly to the 2CRRE Tech Fundamentals Google Sheet and are live for every agent immediately. <span class="mono" style="opacity:0.7;">Build ${BUILD_ID}</span></div>
-    ${quizCheckHtml_()}
+    ${quizCheckHtml_()}${adminToolsHintHtml_()}
     <div style="display:flex; gap:10px; align-items:center; margin-top:16px;">
       <button class="add-topic-btn" id="addTopicBtn">+ Add New Topic</button>
       <button class="admin-btn" id="agentProgressBtn">Agent Progress</button>
