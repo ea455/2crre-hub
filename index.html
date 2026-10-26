@@ -528,6 +528,7 @@
   .tt-actions button{ padding:10px 16px; border-radius:999px; border:1px solid var(--green); background:transparent; color:var(--green); font:inherit; font-weight:600; font-size:0.86rem; cursor:pointer; }
   .tt-actions button.danger{ border-color:rgba(229,72,77,0.7); color:#ffb7ba; }
   .tt-out{ color:var(--ink); font-size:0.9rem; }
+  .tt-sub{ color:var(--ink-muted); font-size:0.88rem; line-height:1.55; margin:6px 0 0; }
   .tt-table{ border-collapse:collapse; width:100%; margin-top:8px; }
   .tt-table td{ padding:8px 10px 8px 0; border-top:1px solid var(--line); vertical-align:top; }
   .tt-table td:first-child{ color:var(--ink-muted); width:190px; }
@@ -929,7 +930,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-24-C'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-26-B'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -2169,6 +2170,7 @@ async function loadStatus(){
     backendIsOld_ = !!(d && d.ok && Array.isArray(d.topics));
     myStatus = (d && d.ok && !backendIsOld_) ? d : null;
     statusError_ = (d && d.ok === false) ? String(d.error || 'unknown error') : '';
+    if(myStatus && myStatus.certificate && myStatus.certificate.emailPending) deliverCertificateEmail_(myStatus.certificate);
   }catch(e){
     if(e instanceof AuthRequiredError) throw e;
     statusError_ = 'could not reach the server (' + e.message + ')';
@@ -2254,6 +2256,7 @@ function renderCertCard_(q){
 
 // ---- the moment you finish the last lesson ----
 function onCertificateIssued_(cert){
+  deliverCertificateEmail_(cert); // emailed straight away, with the PDF and image attached
   if(!myStatus) myStatus = { ok: true, certificate: cert, valid: true, daysLeft: 182, renewal: { windowOpen: false, lapsed: false, pendingChanges: [], mustReview: [], blockedReason: '', canStart: false, last: null, failedCount: 0, needsHelp: false, hasOpenAttempt: false } };
   else myStatus.certificate = cert;
   refreshStatus_();
@@ -2277,14 +2280,14 @@ function certHtml_(c){
     <svg class="cert-arcs" viewBox="0 0 1100 850" preserveAspectRatio="none" aria-hidden="true"><g fill="none" stroke="rgba(255,255,255,0.055)" stroke-width="1.4"><path d="M -60 700 C 260 600, 640 620, 1160 510"/><path d="M -60 758 C 300 660, 700 690, 1160 578"/><path d="M 360 910 C 520 620, 720 470, 1000 300"/></g></svg>
     <div class="cert-frame2"></div><div class="cert-frame"></div><div class="cert-bar top"></div><div class="cert-bar bottom"></div>
     <div class="cert-content">
-      <img class="cert-logo" src="data:image/png;base64,${LOGOS.twocrre}" alt="2 Costa Rica Real Estate">
+      <img class="cert-logo" src="data:image/png;base64,${LOGOS.twocrre}" alt="2Costa Rica Real Estate">
       <div class="cert-eyebrow">2CRRE Tech Academy</div>
       <div class="cert-title">Certificate of ${renewal ? 'Renewal' : 'Completion'}</div>
       <div class="cert-short-rule"></div>
       <div class="cert-certifies">This certifies that</div>
       <div class="cert-name-wrap"><span class="cert-name" id="certName">${escapeHtml(c.name)}</span></div>
       <div class="cert-rule"></div>
-      <p class="cert-body">${renewal ? 'has successfully renewed their certification in the' : 'has successfully completed the'} <b>2CRRE Tech Academy</b>,<br>the technology training program of<br>2 Costa Rica Real Estate.</p>
+      <p class="cert-body">${renewal ? 'has successfully renewed their certification in the' : 'has successfully completed the'} <b>2CRRE Tech Academy</b>,<br>the technology training program of<br>2Costa Rica Real Estate.</p>
     </div>
     <div class="cert-completed"><div class="label">${renewal ? 'Renewed' : 'Completed'}</div><div class="value">${fmtLong_(new Date(c.issuedOn))}</div></div>
     <div class="cert-number">Certificate No. ${escapeHtml(c.no)}</div>
@@ -2314,14 +2317,16 @@ function renderCertificatePage(){
     <div class="page-title-row"><h1 class="page-title">Certificate</h1></div>
     <div class="cert-stage" id="certStage">${certHtml_(c)}</div>
     <div class="cert-actions">
-      <button type="button" class="cert-btn primary" id="certPng">Download image (PNG)</button>
-      <button type="button" class="cert-btn" id="certPrint">Print or save as PDF</button>
+      <button type="button" class="cert-btn primary" id="certPdf">Download PDF</button>
+      <button type="button" class="cert-btn" id="certPng">Download image (PNG)</button>
+      <button type="button" class="cert-btn" id="certPrint">Print</button>
       ${r.windowOpen ? `<button type="button" class="cert-btn warn" id="certRenew">${r.lapsed ? 'Renew now' : 'Start renewal'}</button>` : ''}
     </div>
     <p class="cert-meta">Certificate No. <b>${escapeHtml(c.no)}</b> \u00b7 issued ${fmtLong_(new Date(c.issuedOn))} \u00b7 ${r.lapsed ? 'expired' : 'valid until'} <b>${fmtLong_(new Date(c.validUntil))}</b>.<br>If your name isn\u2019t spelled the way you want it, tell the team and we\u2019ll correct it.</p>
     <div class="build-stamp">Build ${BUILD_ID}</div>
     <div class="footer-space"></div>`;
   document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
+  document.getElementById('certPdf').addEventListener('click', () => downloadCertPdf_(c));
   document.getElementById('certPng').addEventListener('click', () => downloadCertPng_(c));
   document.getElementById('certPrint').addEventListener('click', () => printCertificate_());
   const rn = document.getElementById('certRenew');
@@ -2341,7 +2346,7 @@ function printCertificate_(){
 }
 
 // The same design drawn on a canvas: a 2200 x 1700 image to keep or share.
-async function downloadCertPng_(c){
+async function renderCertCanvas_(c){
   const S = 2, W = 1100 * S, H = 850 * S, renewal = c.type === 'Renewal';
   const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
   const g = cv.getContext('2d');
@@ -2393,17 +2398,81 @@ async function downloadCertPng_(c){
   const light = `300 16.5px ${FF}`, bold = `600 16.5px ${FF}`, bodyCol = '#d3e2df';
   mixed([{ text: (renewal ? 'has successfully renewed their certification in the ' : 'has successfully completed the '), font: light, color: bodyCol }, { text: '2CRRE Tech Academy', font: bold, color: '#ffffff' }, { text: ',', font: light, color: bodyCol }], 520.75);
   mixed([{ text: 'the technology training program of', font: light, color: bodyCol }], 551.25);
-  mixed([{ text: '2 Costa Rica Real Estate.', font: light, color: bodyCol }], 581.75);
+  mixed([{ text: '2Costa Rica Real Estate.', font: light, color: bodyCol }], 581.75);
   spaced(renewal ? 'RENEWED' : 'COMPLETED', 702.5, `600 11px ${FF}`, '#a9d27f', 4.18);
   spaced(fmtLong_(new Date(c.issuedOn)), 733, `500 22px ${FF}`, '#f7f5ee', 0.44);
   spaced(('Certificate No. ' + c.no).toUpperCase(), 786, `500 10.5px ${FF}`, '#b4cdc9', 3.15);
+  return cv;
+}
+
+function saveBlob_(blob, name){
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+}
+async function downloadCertPng_(c){
+  const cv = await renderCertCanvas_(c);
   cv.toBlob(blob => {
-    if(!blob){ showToast_('We couldn\u2019t create the image. Try \u201cPrint or save as PDF\u201d instead.'); return; }
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob); a.download = '2CRRE-Certificate-' + c.no + '.png';
-    document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+    if(!blob){ showToast_('We couldn\u2019t create the image. Try \u201cDownload PDF\u201d instead.'); return; }
+    saveBlob_(blob, '2CRRE-Certificate-' + c.no + '.png');
   }, 'image/png');
+}
+
+// ---- PDF: the drawn certificate as one US-Letter landscape page (11 x 8.5 in, the same proportions as the design) ----
+function b64ToBytes_(b64){ const s = atob(b64), u = new Uint8Array(s.length); for(let i = 0; i < s.length; i++) u[i] = s.charCodeAt(i); return u; }
+function bytesToB64_(u){ let s = ''; for(let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000)); return btoa(s); }
+function buildPdfFromJpeg_(jpeg, w, h){
+  const enc = new TextEncoder(), parts = [], off = [];
+  let len = 0;
+  const push = x => { const u = typeof x === 'string' ? enc.encode(x) : x; parts.push(u); len += u.length; };
+  const obj = (n, body) => { off[n] = len; push(n + ' 0 obj\n' + body + '\nendobj\n'); };
+  push('%PDF-1.4\n');
+  obj(1, '<< /Type /Catalog /Pages 2 0 R >>');
+  obj(2, '<< /Type /Pages /Kids [3 0 R] /Count 1 >>');
+  obj(3, '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 792 612] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>');
+  off[4] = len;
+  push('4 0 obj\n<< /Type /XObject /Subtype /Image /Width ' + w + ' /Height ' + h + ' /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ' + jpeg.length + ' >>\nstream\n');
+  push(jpeg); push('\nendstream\nendobj\n');
+  const content = 'q 792 0 0 612 0 0 cm /Im0 Do Q';
+  obj(5, '<< /Length ' + content.length + ' >>\nstream\n' + content + '\nendstream');
+  const xref = len;
+  let x = 'xref\n0 6\n0000000000 65535 f \n';
+  for(let i = 1; i <= 5; i++) x += String(off[i]).padStart(10, '0') + ' 00000 n \n';
+  push(x + 'trailer\n<< /Size 6 /Root 1 0 R /Info << /Title (2CRRE Tech Academy Certificate) >> >>\nstartxref\n' + xref + '\n%%EOF\n');
+  const out = new Uint8Array(len); let p = 0;
+  parts.forEach(u => { out.set(u, p); p += u.length; });
+  return out;
+}
+// Both files as base64, drawn from the same canvas.
+async function certFiles_(c){
+  const cv = await renderCertCanvas_(c);
+  const png = cv.toDataURL('image/png').split(',')[1];
+  const jpeg = b64ToBytes_(cv.toDataURL('image/jpeg', 0.93).split(',')[1]);
+  return { png: png, pdf: bytesToB64_(buildPdfFromJpeg_(jpeg, cv.width, cv.height)) };
+}
+async function downloadCertPdf_(c){
+  try{
+    const f = await certFiles_(c);
+    saveBlob_(new Blob([b64ToBytes_(f.pdf)], { type: 'application/pdf' }), '2CRRE-Certificate-' + c.no + '.pdf');
+  }catch(e){ showToast_('We couldn\u2019t create the PDF. Try \u201cPrint\u201d instead.'); }
+}
+
+// ---- emailing the certificate: the browser draws it and the server sends it, the moment it is issued ----
+const certEmailPromise_ = {};
+function deliverCertificateEmail_(cert){
+  if(!cert || !cert.emailPending || !currentAgent) return null;
+  if(certEmailPromise_[cert.no]) return certEmailPromise_[cert.no];
+  certEmailPromise_[cert.no] = (async () => {
+    try{
+      const f = await certFiles_(cert);
+      const d = await postToSheet({ action: 'emailCertificate', idToken: currentAgent.idToken, certNo: cert.no, png: f.png, pdf: f.pdf });
+      if(!d || !d.ok) delete certEmailPromise_[cert.no]; // try again on the next visit
+      else if(myStatus && myStatus.certificate && myStatus.certificate.no === cert.no) myStatus.certificate.emailPending = false;
+      return d;
+    }catch(e){ delete certEmailPromise_[cert.no]; console.error('Could not email the certificate', e); return null; }
+  })();
+  return certEmailPromise_[cert.no];
 }
 
 // ---- the renewal page ----
@@ -2541,6 +2610,7 @@ function renderRenewalResult_(res){
   stopReadAloud_(); teardownPinnedStage_();
   const main = document.getElementById('main');
   const passed = !!res.passed;
+  if(passed && res.certificate) deliverCertificateEmail_(res.certificate); // the renewed certificate is emailed straight away
   main.innerHTML = `
     <button class="back" id="backBtn">\u2190 Back to all topics</button>
     <div class="lesson-meta">Renewal test \u00b7 result</div>
@@ -2610,26 +2680,55 @@ function renderTestTools_(){
       </div>
       <div class="tt-out" id="ttOut">Press Refresh to see this account\u2019s status.</div>
     </div>
+    <div class="tt-card"><b>Emails to the test account</b>
+      <p class="tt-sub">Reminders normally go out from a daily check (about 9 AM), not the moment you change a date. These buttons let you see every email now. This account always receives its own emails, even while agent emails are off.</p>
+      <div class="tt-actions" id="ttEmails">
+        <button type="button" data-op="emailCertificate">Email me the certificate</button>
+        <button type="button" data-op="emailReminder" data-stage="open">Reminder: 30 days</button>
+        <button type="button" data-op="emailReminder" data-stage="soon">Reminder: 7 days</button>
+        <button type="button" data-op="emailReminder" data-stage="expired">Reminder: expired</button>
+        <button type="button" data-op="runReminders">Run the daily reminder check now</button>
+      </div>
+    </div>
     <div class="tt-card"><b>How to try it</b>
       <ol>
         <li>Press <b>1</b>. The account finishes every lesson and gets its certificate. Then reload the Academy to see it.</li>
         <li>Press <b>2</b>. The renewal window opens. Reload and you\u2019ll see the renewal card.</li>
         <li>To test \u201creview what\u2019s new\u201d, edit any lesson in Admin and set it to Updated or New, then look at the renewal page.</li>
         <li>Start the test. Answer wrong on purpose once to see the fail, review and retake loop, then pass it.</li>
-        <li>Press <b>Reset</b> when you\u2019re done, to leave the account clean.</li>
+        <li>The certificate email is never scheduled: it goes out the moment the certificate is issued (after the last lesson, or after passing the renewal test), with the PDF and image attached. Only the reminders wait for the daily check.</li>
+        <li>To see the reminder emails: after step 2, press <b>Run the daily reminder check now</b> (it sends the right one for the days left), or use the buttons above to send any of them.</li>
+        <li>Pass the test to see the \u201crenewed\u201d email. Press <b>Reset</b> when you\u2019re done, to leave the account clean.</li>
       </ol>
     </div>
     <div class="build-stamp">Build ${BUILD_ID}</div><div class="footer-space"></div>`;
   document.getElementById('backBtn').addEventListener('click', () => renderAdmin());
   const out = document.getElementById('ttOut');
-  document.querySelectorAll('.tt-actions button').forEach(b => b.addEventListener('click', async () => {
+  document.querySelectorAll('.tt-actions button, #ttEmails button').forEach(b => b.addEventListener('click', async () => {
     const op = b.dataset.op, email = document.getElementById('ttEmail').value.trim();
     if(op === 'reset' && !window.confirm('Reset ' + email + '? This deletes its lesson progress, certificates and renewal attempts.')) return;
     out.textContent = 'Working\u2026';
-    const d = await postToSheet({ action: 'testTool', idToken: currentAgent.idToken, op: op, email: email, days: b.dataset.days === undefined ? undefined : Number(b.dataset.days) });
+    const body = { action: 'testTool', idToken: currentAgent.idToken, op: op, email: email, days: b.dataset.days === undefined ? undefined : Number(b.dataset.days), stage: b.dataset.stage };
+    if(op === 'emailCertificate'){ // the browser draws the certificate and sends the files with the request
+      const st = await postToSheet({ action: 'testTool', idToken: currentAgent.idToken, op: 'status', email: email });
+      const cert = st && st.ok && st.status && st.status.certificate;
+      if(cert){ out.textContent = 'Drawing the certificate\u2026'; try{ const f = await certFiles_(cert); body.png = f.png; body.pdf = f.pdf; }catch(e){} }
+    }
+    const d = await postToSheet(body);
     if(!d || !d.ok){ out.innerHTML = '<div class="tt-note bad">' + escapeHtml(friendlyError_(d, 'That didn\u2019t work. Check your connection.')) + '</div>'; return; }
     out.innerHTML = ttSummaryHtml_(d);
-    if(email.toLowerCase() === currentAgent.email.toLowerCase()){ try{ await loadProgress(); await loadStatus(); }catch(e){} }
+    const mine = email.toLowerCase() === currentAgent.email.toLowerCase();
+    if(mine){ try{ await loadProgress(); await loadStatus(); }catch(e){} }
+    const cert = d.status && d.status.certificate;
+    if(op === 'finishAll' && cert && cert.emailPending){
+      // Your own account goes through the real path (exactly what an agent gets); another test account is sent by this tool.
+      let note = '';
+      try{
+        if(mine){ const r = await certEmailPromise_[cert.no]; note = r && r.ok ? (r.sent ? 'The certificate email was sent to you with the PDF and image attached.' : 'Not emailed (' + (r.status || 'skipped') + ').') : 'The certificate email could not be sent.'; }
+        else{ const f = await certFiles_(cert); const r = await postToSheet({ action: 'testTool', idToken: currentAgent.idToken, op: 'emailCertificate', email: email, png: f.png, pdf: f.pdf }); note = r && r.ok ? r.note : 'The certificate email could not be sent.'; }
+      }catch(e){ note = 'The certificate email could not be sent.'; }
+      out.insertAdjacentHTML('afterbegin', '<div class="tt-note">' + escapeHtml(note) + '</div>');
+    }
   }));
 }
 
