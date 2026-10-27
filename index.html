@@ -317,8 +317,8 @@
 
   .cheat-sheet-backdrop{ display:none; position:fixed; inset:0; background:rgba(3,20,24,0.5); z-index:399; }
   .cheat-sheet-backdrop.open{ display:block; }
-  .cheat-sheet-drawer{ position:fixed; top:0; left:0; height:100%; width:440px; max-width:88vw; background:var(--bg2); border-right:1px solid var(--line-strong); box-shadow:24px 0 60px rgba(0,0,0,0.5); z-index:400; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding:32px 28px; }
-  .cheat-sheet-drawer.open{ transform:translateX(0); }
+  .cheat-sheet-drawer{ position:fixed; top:0; left:0; height:100%; width:440px; max-width:88vw; background:var(--bg2); border-right:1px solid var(--line-strong); box-shadow:none; z-index:400; transform:translateX(-100%); transition:transform 0.25s ease; overflow-y:auto; padding:32px 28px; }
+  .cheat-sheet-drawer.open{ transform:translateX(0); box-shadow:24px 0 60px rgba(0,0,0,0.5); }
   .cheat-sheet-close{ position:absolute; top:20px; right:20px; background:transparent; border:1px solid var(--line); color:var(--ink-muted); width:32px; height:32px; border-radius:50%; font-size:0.85rem; cursor:pointer; }
   .cheat-sheet-header h2{ font-family:'Fraunces',serif; font-size:1.4rem; margin:0 0 10px; padding-right:40px; }
   .cheat-sheet-header p{ font-size:0.85rem; color:var(--ink-muted); line-height:1.5; margin:0 0 24px; }
@@ -429,20 +429,31 @@
 
   .qc-sample{ display:block; margin-top:6px; font-size:0.78rem; opacity:0.9; }
   .qc-sample code, .quiz-check code{ font-family:'IBM Plex Mono',monospace; word-break:break-all; }
-  .ss-intro{ color:var(--ink-muted); max-width:560px; margin:0 0 28px; }
-  .ss-split{ display:grid; grid-template-columns:1fr 1fr; border-radius:20px; overflow:hidden; border:1px solid var(--line-strong); }
-  .ss-side{ padding:56px 44px 56px; display:flex; flex-direction:column; gap:38px; min-width:0; }
+  .ss-page{ position:relative; display:flex; flex-direction:column; }
+  .ss-split{ flex:1; display:grid; grid-template-columns:1fr 1fr; }
+  .ss-side{ position:relative; padding:78px 44px 96px; min-width:0; }
   .ss-lp{ background:#ffffff; color:#0d2a32; }
   .ss-rechat{ background:#00232a; color:#ffffff; }
-  .ss-logo{ display:flex; align-items:center; justify-content:center; min-height:170px; margin-bottom:0; }
+  .ss-inner{ width:100%; max-width:640px; margin:0 auto; display:flex; flex-direction:column; gap:38px; }
+  .ss-lp .back{ position:absolute; top:24px; left:28px; margin:0; color:#0d2a32; }
+  .ss-sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); white-space:nowrap; margin:0; padding:0; }
+  .ss-logo{ display:flex; align-items:center; justify-content:center; min-height:170px; }
   .ss-logo img{ height:170px; width:auto; max-width:92%; object-fit:contain; display:block; }
   .ss-rechat .ss-logo img{ filter:brightness(0) invert(1); }
+  .ss-items{ display:flex; flex-direction:column; gap:38px; }
   .ss-item h2{ font-family:'Fraunces',serif; font-weight:400; font-size:1.3rem; line-height:1.3; margin:0 0 14px; color:inherit; }
   .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
   .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .ss-poster{ position:absolute; inset:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#10343b,#061a1f); cursor:pointer; padding:0; border:0; }
+  .ss-thumb{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
+  .ss-play{ position:relative; z-index:1; width:76px; height:76px; border-radius:50%; background:rgba(255,255,255,0.94); color:#0d2a32; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 28px rgba(0,0,0,0.35); transition:transform 0.15s; }
+  .ss-play svg{ margin-left:4px; }
+  .ss-poster:hover .ss-play, .ss-poster:focus-visible .ss-play{ transform:scale(1.08); }
+  .ss-open{ display:inline-block; margin-top:10px; font-size:0.82rem; color:inherit; opacity:0.65; text-decoration:underline; text-underline-offset:3px; }
+  .ss-open:hover{ opacity:1; }
   .ss-empty{ text-align:center; opacity:0.6; font-style:italic; margin:12px 0 0; }
-  @media (max-width:860px){ .ss-split{ grid-template-columns:1fr; } .ss-side{ padding:40px 20px; gap:30px; } .ss-logo{ min-height:120px; } .ss-logo img{ height:120px; } }
+  @media (max-width:860px){ .ss-split{ grid-template-columns:1fr; } .ss-side{ padding:70px 20px 56px; } .ss-lp .back{ left:20px; } .ss-inner{ gap:30px; } .ss-logo{ min-height:120px; } .ss-logo img{ height:120px; } .ss-play{ width:64px; height:64px; } }
   /* ---- Certificate ---- */
   .cert-stage{ position:relative; width:100%; max-width:1100px; aspect-ratio:1100 / 850; overflow:hidden; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.45); background:#072f36; margin-top:8px; }
   .cert{ position:absolute; left:0; top:0; width:1100px; height:850px; overflow:hidden; transform-origin:0 0; background:radial-gradient(ellipse 85% 72% at 50% 38%, #126774 0%, #0c4b55 46%, #072e35 100%); color:#f7f5ee; font-family:'Montserrat','Inter',sans-serif; box-sizing:border-box; }
@@ -948,7 +959,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-27-A'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-27-D'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1247,7 +1258,7 @@ function getEmbed(url){
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([\w-]+)/);
   const driveId = (driveFile && driveFile[1]) || (driveOpen && driveOpen[1]);
-  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay"></iframe>`;
+  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);">Can't embed \u2014 <a href="${url}" target="_blank" style="margin-left:6px;">open directly</a></div>`;
 }
 
@@ -2790,35 +2801,90 @@ function sessionProblems_(list){
   });
   return out;
 }
-function sessionSideHtml_(key, label, logoB64, items){
-  const body = items.length ? items.map(s => `
+// A Drive video also gets a quiet "Open in Drive" link: Google's own player, with every control, in a new tab.
+function sessionOpenLink_(url){
+  const m = String(url).match(/drive\.google\.com\/file\/d\/([\w-]+)/) || String(url).match(/drive\.google\.com\/open\?id=([\w-]+)/);
+  return m ? '<a class="ss-open" href="https://drive.google.com/file/d/' + m[1] + '/view" target="_blank" rel="noopener">Open in Drive \u2197</a>' : '';
+}
+// Videos start as a picture with a play button. The player (Google's, Wistia's...) is only loaded when someone presses play,
+// so opening the page loads nothing heavy and no player shows its own "Loading..." text.
+let SESSION_EMBEDS_ = [];
+function sessionPosterThumb_(url){
+  const m = String(url).match(/drive\.google\.com\/file\/d\/([\w-]+)/) || String(url).match(/drive\.google\.com\/open\?id=([\w-]+)/);
+  return m ? 'https://drive.google.com/thumbnail?id=' + m[1] + '&sz=w1280' : '';
+}
+// YouTube and Wistia can start by themselves once the person pressed play (Google Drive cannot).
+function sessionEmbedWithAutoplay_(html){
+  return String(html)
+    .replace(/(youtube\.com\/embed\/[\w-]+)(?=")/, '$1?autoplay=1')
+    .replace(/(fast\.wistia\.net\/embed\/iframe\/[\w-]+)(?=")/, '$1?autoplay=true');
+}
+function sessionItemsHtml_(items){
+  if(!items.length) return '<p class="ss-empty">New sessions are coming soon.</p>';
+  return items.map(s => {
+    const embed = getEmbed(s.url);
+    let frame = embed; // a link that cannot be played inside the page just shows as a plain link
+    if(sessionEmbeddable_(s.url)){
+      const i = SESSION_EMBEDS_.push(embed) - 1, thumb = sessionPosterThumb_(s.url);
+      frame = `<button type="button" class="ss-poster" data-ss-play="${i}" aria-label="Play: ${escapeHtml(s.title)}">${thumb ? `<img class="ss-thumb" alt="" referrerpolicy="no-referrer" src="${thumb}" onerror="this.remove()">` : ''}<span class="ss-play" aria-hidden="true"><svg viewBox="0 0 24 24" width="30" height="30"><path d="M8 5v14l11-7z" fill="currentColor"/></svg></span></button>`;
+    }
+    return `
       <article class="ss-item">
         <h2>${escapeHtml(s.title)}</h2>
-        <div class="ss-frame">${getEmbed(s.url)}</div>
-      </article>`).join('') : '<p class="ss-empty">New sessions are coming soon.</p>';
-  return `<section class="ss-side ss-${key}" aria-label="${label} recorded sessions">
-      <div class="ss-logo"><img alt="${label}" src="data:image/png;base64,${logoB64}"></div>${body}
-    </section>`;
+        <div class="ss-frame">${frame}</div>
+        ${sessionOpenLink_(s.url)}
+      </article>`;
+  }).join('');
+}
+// The two halves cover the WHOLE window: from edge to edge and down to the bottom, not a box inside the page.
+function sessionFitBleed_(){
+  const page = document.getElementById('ssPage');
+  if(!page) return;
+  const vw = document.documentElement.clientWidth; // excludes the scrollbar, so there is never sideways scrolling
+  page.style.width = vw + 'px';
+  page.style.marginLeft = 'calc(50% - ' + (vw / 2) + 'px)';
+  page.style.minHeight = '0px';
+  const top = page.getBoundingClientRect().top + window.scrollY;
+  page.style.minHeight = Math.max(0, window.innerHeight - top) + 'px';
 }
 async function renderSessionsPage(){
   const main = document.getElementById('main');
   main.innerHTML = `
-    <button class="back" id="backBtn">\u2190 Back to all topics</button>
-    <h1 class="page-title">Recorded Sessions</h1>
-    <p class="ss-intro">Trainings recorded specifically for 2CRRE. Watch them whenever you like.</p>
-    <div id="ssBody"><p class="ss-intro">Loading\u2026</p></div>
-    <div class="footer-space"></div>`;
+    <div class="ss-page" id="ssPage"><div class="ss-split">
+      <section class="ss-side ss-lp" aria-label="Luxury Presence recorded sessions"><div class="ss-inner">
+        <button class="back" id="backBtn">\u2190 Back to all topics</button>
+        <h1 class="page-title ss-sr">Recorded Sessions</h1>
+        <div class="ss-logo"><img alt="Luxury Presence" src="data:image/png;base64,${LOGOS.lp}"></div>
+        <div class="ss-items" id="ssItemsLp"></div>
+      </div></section>
+      <section class="ss-side ss-rechat" aria-label="ReChat recorded sessions"><div class="ss-inner">
+        <div class="ss-logo"><img alt="ReChat" src="data:image/png;base64,${LOGOS.rechat}"></div>
+        <div class="ss-items" id="ssItemsRechat"></div>
+      </div></section>
+    </div></div>`;
   document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
-  const body = document.getElementById('ssBody');
+  SESSION_EMBEDS_ = [];
+  document.getElementById('ssPage').addEventListener('click', ev => {
+    const b = ev.target.closest('[data-ss-play]');
+    if(!b) return;
+    const html = SESSION_EMBEDS_[Number(b.dataset.ssPlay)];
+    if(html) b.parentElement.innerHTML = sessionEmbedWithAutoplay_(html);
+  });
+  sessionFitBleed_();
+  if(!window.__ssResizeWired){ window.__ssResizeWired = true; window.addEventListener('resize', sessionFitBleed_); }
   try{
     const data = await loadSessions_();
     const playable = data.sessions.filter(s => s.title && s.url);
     const pick = key => playable.filter(s => sessionPlatform_(s.platform) === key);
-    body.innerHTML = `<div class="ss-split">${sessionSideHtml_('lp', 'Luxury Presence', LOGOS.lp, pick('lp'))}${sessionSideHtml_('rechat', 'ReChat', LOGOS.rechat, pick('rechat'))}</div>`;
+    document.getElementById('ssItemsLp').innerHTML = sessionItemsHtml_(pick('lp'));
+    document.getElementById('ssItemsRechat').innerHTML = sessionItemsHtml_(pick('rechat'));
   }catch(e){
     if(e instanceof AuthRequiredError) return;
-    body.innerHTML = '<p class="ss-intro">The sessions could not be loaded right now. Please reload the page.</p>';
+    const msg = '<p class="ss-empty">The sessions could not be loaded right now. Please reload the page.</p>';
+    const l = document.getElementById('ssItemsLp'), r = document.getElementById('ssItemsRechat');
+    if(l) l.innerHTML = msg; if(r) r.innerHTML = msg;
   }
+  sessionFitBleed_();
 }
 function adminToolsHintHtml_(){
   setTimeout(fillSessionsCheck_, 0);
