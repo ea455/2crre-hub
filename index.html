@@ -677,7 +677,10 @@
 
 <script>
 let TOPICS = [];
-const CATEGORY_ORDER = ["Getting Started", "Contacts & CRM", "Listings", "Marketing", "Deals & Transactions", "Reference & Standards"];
+// The six categories a lesson can have. Their ORDER comes from the Sheet: the order in which they first appear in its rows.
+const CATEGORY_NAMES = ["Getting Started", "Contacts & CRM", "Listings", "Marketing", "Deals & Transactions", "Reference & Standards"];
+let CATEGORY_ORDER = CATEGORY_NAMES.slice();
+let LEGACY_ORDER_LAYOUT = false; // true while the Sheet still has the old "Order" column
 const CATEGORY_DISPLAY_NAMES = {
   "Getting Started": "Your Tech Stack"
 };
@@ -930,7 +933,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-26-B'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-26-C'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1100,6 +1103,11 @@ function signOutAgent(){
 // hardcoded array or window.storage. loadTopicsFromSheet() is the single
 // source of truth; every admin write re-fetches afterward so the app always
 // reflects exactly what's in the sheet, even if someone edited it directly.
+function categoriesInSheetOrder_(topics){
+  const seen = [];
+  topics.forEach(t => { if(CATEGORY_NAMES.indexOf(t.Category) !== -1 && seen.indexOf(t.Category) === -1) seen.push(t.Category); });
+  return seen.concat(CATEGORY_NAMES.filter(c => seen.indexOf(c) === -1));
+}
 async function loadTopicsFromSheet(){
   const res = await fetch(APPS_SCRIPT_URL + '?session=' + sessionParam_());
   const data = await res.json();
@@ -1109,7 +1117,11 @@ async function loadTopicsFromSheet(){
   }
   if(!(data && data.ok && Array.isArray(data.topics))) throw new Error((data && data.error) || 'The lessons could not be loaded');
   TOPICS.length = 0;
-  data.topics.forEach(t => TOPICS.push({ ...t, Order: Number(t.Order) || 0 }));
+  // The ORDER OF THE ROWS in the Sheet is the order of the lessons. (A Sheet that still has the old "Order"
+  // column keeps working the old way, so nothing moves until that column is removed.)
+  LEGACY_ORDER_LAYOUT = data.topics.some(t => t.Order !== undefined);
+  data.topics.forEach((t, i) => TOPICS.push({ ...t, Order: LEGACY_ORDER_LAYOUT ? (Number(t.Order) || 0) : i }));
+  CATEGORY_ORDER = LEGACY_ORDER_LAYOUT ? CATEGORY_NAMES.slice() : categoriesInSheetOrder_(data.topics);
   recomputeDerivedTracks();
 }
 // After an Admin edit: refresh the lessons, and say so (never silently) if that fails.
@@ -1158,7 +1170,7 @@ async function restoreDeleted(id){
 async function reorderTopics(updates){
   const result = await postToSheet({ action: 'reorder', updates, idToken: currentAgent ? currentAgent.idToken : null });
   if(!result.ok){ console.error('Reorder failed', result.error); showAdminToast('Could not save new order \u2014 ' + (result.error || 'unknown error'), true); }
-  else { showAdminToast('Order saved'); }
+  else { showAdminToast('Order saved'); await reloadTopics_(); }
   await reloadTopics_();
 }
 let adminToastTimer = null;
@@ -3200,14 +3212,9 @@ function wireDragReorder(list){
       e.preventDefault();
       const zone = row.closest('.admin-drop-zone');
       const idsInOrder = [...zone.querySelectorAll('.admin-row')].map(r => r.dataset.id);
-      const updates = idsInOrder
-        .map((id, i) => ({ id, order: i }))
-        .filter(u => {
-          const topic = TOPICS.find(t => t.ID === u.id);
-          return topic && Number(topic.Order) !== u.order;
-        });
-      if(updates.length){
-        await reorderTopics(updates);
+      const current = TOPICS.filter(t => t.Category === zone.dataset.cat).sort((a, b) => (a.Order ?? 999) - (b.Order ?? 999)).map(t => t.ID);
+      if(idsInOrder.join('|') !== current.join('|')){
+        await reorderTopics(idsInOrder.map((id, i) => ({ id, order: i }))); // moves the rows in the Sheet
       }
       renderAdmin();
     });
@@ -3327,7 +3334,7 @@ function renderEditForm(id){
     const updated = {
       ID: newId, Topic: title,
       Category: newCategory,
-      Order: orderForCategory,
+      ...(LEGACY_ORDER_LAYOUT ? { Order: orderForCategory } : {}),
       Platform: document.getElementById('fPlatform').value,
       'Page Content': document.getElementById('fContent').value,
       'Video Links': document.getElementById('fVideo').value,
@@ -3335,7 +3342,7 @@ function renderEditForm(id){
       'Renewal Quiz': document.getElementById('fRenewalQuiz').value,
       'Flag': document.getElementById('fFlag').value,
       'Change Note': document.getElementById('fNote').value,
-      'Source': t.Source || '', 'Status': 'Reviewed OK', __new: isNew
+      'Status': 'Reviewed OK', __new: isNew
     };
     await saveOverride(updated);
     renderAdmin();
