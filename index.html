@@ -445,6 +445,7 @@
   .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
   .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .pane-hidden{ position:absolute; left:0; right:0; top:0; height:0; overflow:hidden; visibility:hidden; pointer-events:none; }
   .ss-poster{ position:absolute; inset:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#10343b,#061a1f); cursor:pointer; padding:0; border:0; }
   .ss-thumb{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
   .ss-play{ position:relative; z-index:1; width:76px; height:76px; border-radius:50%; background:rgba(255,255,255,0.94); color:#0d2a32; display:flex; align-items:center; justify-content:center; box-shadow:0 8px 28px rgba(0,0,0,0.35); transition:transform 0.15s; }
@@ -959,7 +960,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-27-D'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-27-E'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1931,10 +1932,9 @@ function renderDirectory(){
   renderResults('');
 }
 
-function renderWebinarsPage(){
-  const main = document.getElementById('main');
-  main.innerHTML = `
-    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+function webinarsHtml_(){
+  return `
+    <button class="back" id="paneBackBtn">\u2190 Back to all topics</button>
     <h1 class="page-title">Live Webinars</h1>
     <p style="color:var(--ink-muted); max-width:560px; margin-bottom:36px;">Register for live training sessions, straight from ReChat and Luxury Presence.</p>
 
@@ -1959,8 +1959,8 @@ function renderWebinarsPage(){
       </div>
     </div>
     <div class="footer-space"></div>`;
-  document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
 }
+function renderWebinarsPage(){ showPane_('webinars'); }
 
 // Called when a locked card is clicked \u2014 scrolls to and pulses the one card
 // that's actually next in line, so it's obvious what needs to happen first.
@@ -2783,6 +2783,13 @@ async function loadSessions_(){
   if(!(data && data.ok && Array.isArray(data.sessions))) throw new Error((data && data.error) || 'The sessions could not be loaded');
   return data;
 }
+// The list is fetched in the background as soon as the app opens and kept; opening the page shows it at once
+// and quietly checks for changes.
+let SESSIONS_CACHE_ = null, SESSIONS_INFLIGHT_ = null;
+function refreshSessions_(){
+  if(!SESSIONS_INFLIGHT_) SESSIONS_INFLIGHT_ = loadSessions_().then(d => { SESSIONS_CACHE_ = d; return d; }).finally(() => { SESSIONS_INFLIGHT_ = null; });
+  return SESSIONS_INFLIGHT_;
+}
 function sessionPlatform_(p){
   const s = String(p || '').toLowerCase().replace(/[^a-z]/g, '');
   if(s === 'lp' || s === 'luxurypresence' || s === 'presence') return 'lp';
@@ -2872,17 +2879,25 @@ async function renderSessionsPage(){
   });
   sessionFitBleed_();
   if(!window.__ssResizeWired){ window.__ssResizeWired = true; window.addEventListener('resize', sessionFitBleed_); }
-  try{
-    const data = await loadSessions_();
+  const fill = data => {
     const playable = data.sessions.filter(s => s.title && s.url);
     const pick = key => playable.filter(s => sessionPlatform_(s.platform) === key);
     document.getElementById('ssItemsLp').innerHTML = sessionItemsHtml_(pick('lp'));
     document.getElementById('ssItemsRechat').innerHTML = sessionItemsHtml_(pick('rechat'));
+    sessionFitBleed_();
+  };
+  const cached = SESSIONS_CACHE_;
+  if(cached) fill(cached); // instant: it was fetched when the app opened
+  try{
+    const fresh = await refreshSessions_();
+    if(!cached || JSON.stringify(fresh.sessions) !== JSON.stringify(cached.sessions)) fill(fresh);
   }catch(e){
     if(e instanceof AuthRequiredError) return;
-    const msg = '<p class="ss-empty">The sessions could not be loaded right now. Please reload the page.</p>';
-    const l = document.getElementById('ssItemsLp'), r = document.getElementById('ssItemsRechat');
-    if(l) l.innerHTML = msg; if(r) r.innerHTML = msg;
+    if(!cached){
+      const msg = '<p class="ss-empty">The sessions could not be loaded right now. Please reload the page.</p>';
+      const l = document.getElementById('ssItemsLp'), r = document.getElementById('ssItemsRechat');
+      if(l) l.innerHTML = msg; if(r) r.innerHTML = msg;
+    }
   }
   sessionFitBleed_();
 }
@@ -2904,6 +2919,49 @@ async function fillSessionsCheck_(){
   }catch(e){ el.innerHTML = ''; }
 }
 document.getElementById('headerSessionsBtn').addEventListener('click', () => renderSessionsPage());
+
+
+// ================= Pages that are ready before they are asked for =================
+// Live Webinars (an Airtable table) is built ONCE in the background right after the app opens and kept, hidden.
+// Opening it only reveals it, so nothing loads when the button is pressed.
+const PANES_ = {};
+function ensurePane_(name){
+  if(PANES_[name]) return PANES_[name];
+  if(name !== 'webinars') return null;
+  const pane = document.createElement('div');
+  pane.className = 'wrap pane pane-hidden';
+  pane.id = 'pane-' + name;
+  pane.innerHTML = webinarsHtml_();
+  document.getElementById('main').insertAdjacentElement('afterend', pane);
+  pane.querySelector('#paneBackBtn').addEventListener('click', () => renderDirectory());
+  pane.dataset.builtAt = String(Date.now());
+  PANES_[name] = pane;
+  return pane;
+}
+function hidePanes_(){
+  Object.keys(PANES_).forEach(k => PANES_[k].classList.add('pane-hidden'));
+  document.getElementById('main').style.display = '';
+}
+function showPane_(name){
+  const pane = ensurePane_(name);
+  if(!pane) return;
+  // a schedule that has been sitting for a long time is refreshed the next time it is opened
+  if(Date.now() - Number(pane.dataset.builtAt) > 20 * 60 * 1000){
+    pane.querySelectorAll('iframe').forEach(fr => { fr.src = fr.src; });
+    pane.dataset.builtAt = String(Date.now());
+  }
+  hidePanes_();
+  document.getElementById('main').style.display = 'none';
+  pane.classList.remove('pane-hidden');
+  window.scrollTo(0, 0);
+}
+// Whenever any other page is drawn into the main area, a revealed pane steps aside.
+new MutationObserver(() => hidePanes_()).observe(document.getElementById('main'), { childList: true });
+function afterAppReady_(){
+  refreshSessions_().catch(() => {});
+  const saver = navigator.connection && navigator.connection.saveData; // do not spend a data-saver phone's data
+  if(!saver) setTimeout(() => { try{ if(currentAgent) ensurePane_('webinars'); }catch(e){} }, 1200);
+}
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
@@ -3621,6 +3679,7 @@ async function startApp(){
     applyAdminVisibility_();
     renderDirectory();
     routeFromHash_(); // a link from an email: #certificate or #renew
+    afterAppReady_(); // get the other pages ready in the background
     setLoadingStage_(4);
   }catch(e){
     // Whatever broke, the person should see a real message, not a logo
