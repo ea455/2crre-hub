@@ -429,6 +429,20 @@
 
   .qc-sample{ display:block; margin-top:6px; font-size:0.78rem; opacity:0.9; }
   .qc-sample code, .quiz-check code{ font-family:'IBM Plex Mono',monospace; word-break:break-all; }
+  .ss-intro{ color:var(--ink-muted); max-width:560px; margin:0 0 28px; }
+  .ss-split{ display:grid; grid-template-columns:1fr 1fr; border-radius:20px; overflow:hidden; border:1px solid var(--line-strong); }
+  .ss-side{ padding:56px 44px 56px; display:flex; flex-direction:column; gap:38px; min-width:0; }
+  .ss-lp{ background:#ffffff; color:#0d2a32; }
+  .ss-rechat{ background:#00232a; color:#ffffff; }
+  .ss-logo{ display:flex; align-items:center; justify-content:center; min-height:170px; margin-bottom:0; }
+  .ss-logo img{ height:170px; width:auto; max-width:92%; object-fit:contain; display:block; }
+  .ss-rechat .ss-logo img{ filter:brightness(0) invert(1); }
+  .ss-item h2{ font-family:'Fraunces',serif; font-weight:400; font-size:1.3rem; line-height:1.3; margin:0 0 14px; color:inherit; }
+  .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
+  .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
+  .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .ss-empty{ text-align:center; opacity:0.6; font-style:italic; margin:12px 0 0; }
+  @media (max-width:860px){ .ss-split{ grid-template-columns:1fr; } .ss-side{ padding:40px 20px; gap:30px; } .ss-logo{ min-height:120px; } .ss-logo img{ height:120px; } }
   /* ---- Certificate ---- */
   .cert-stage{ position:relative; width:100%; max-width:1100px; aspect-ratio:1100 / 850; overflow:hidden; border-radius:10px; box-shadow:0 20px 60px rgba(0,0,0,0.45); background:#072f36; margin-top:8px; }
   .cert{ position:absolute; left:0; top:0; width:1100px; height:850px; overflow:hidden; transform-origin:0 0; background:radial-gradient(ellipse 85% 72% at 50% 38%, #126774 0%, #0c4b55 46%, #072e35 100%); color:#f7f5ee; font-family:'Montserrat','Inter',sans-serif; box-sizing:border-box; }
@@ -628,6 +642,7 @@
   <button class="brand" id="brandLogoBtn"><img id="brandLogoImg" style="height:30px;display:block;"> <span>Tech Training</span></button>
   <div class="header-right">
     <button class="admin-toggle admin-toggle--accent" id="headerWebinarsBtn">Live Webinars</button>
+    <button class="admin-toggle admin-toggle--accent" id="headerSessionsBtn">Recorded Sessions</button>
     <button class="admin-toggle admin-toggle--accent" id="headerSupportBtn">Support</button>
     <button class="admin-toggle" id="adminToggle">Admin</button>
   </div>
@@ -933,7 +948,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-26-C'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-27-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -2201,7 +2216,7 @@ function friendlyError_(d, fallback){
 }
 
 // For the Admin screen: say plainly why certificates / Test tools are not there.
-function adminToolsHintHtml_(){
+function adminToolsHintBase_(){
   if(backendIsOld_) return '<div class="quiz-check bad"><b>Certificates and renewals:</b> the Academy backend (Code.gs) is still the OLD version. Paste the new Code.gs into Apps Script and deploy a new version.</div>';
   if(!myStatus) return '<div class="quiz-check bad"><b>Certificates and renewals:</b> the status could not be loaded' + (statusError_ ? ' (the server said: <code>' + escapeHtml(statusError_) + '</code>)' : '') + '. Reload the page; if it persists, check the Apps Script deployment.</div>';
   if(myStatus.testTools === false) return '<div class="quiz-check"><b>Test tools:</b> off. To switch them on, open Apps Script &gt; Project Settings &gt; Script Properties and set <code>TEST_TOOLS_ENABLED</code> to <code>true</code> and <code>TEST_ACCOUNTS</code> to your email. Then reload.</div>';
@@ -2648,6 +2663,7 @@ function renderRenewalResult_(res){
 // ---- links in the emails (#certificate, #renew) ----
 function routeFromHash_(){
   const h = (location.hash || '').toLowerCase();
+  if(h === '#sessions'){ try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} renderSessionsPage(); return; }
   if(!h || !myStatus || !myStatus.certificate) return;
   try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
   if(h === '#certificate') renderCertificatePage();
@@ -2744,6 +2760,84 @@ function renderTestTools_(){
   }));
 }
 
+
+
+// ================= Recorded Sessions =================
+// The Sessions tab of the Sheet: Platform | Title | Video Link. Luxury Presence on the left, ReChat on the right, each with its
+// sessions top to bottom in the Sheet's row order.
+async function loadSessions_(){
+  const res = await fetch(APPS_SCRIPT_URL + '?action=sessions&session=' + sessionParam_());
+  const data = await res.json();
+  if(data && data.authRequired){ requireSignInAgain_('Please sign in to continue.'); throw new AuthRequiredError(); }
+  if(!(data && data.ok && Array.isArray(data.sessions))) throw new Error((data && data.error) || 'The sessions could not be loaded');
+  return data;
+}
+function sessionPlatform_(p){
+  const s = String(p || '').toLowerCase().replace(/[^a-z]/g, '');
+  if(s === 'lp' || s === 'luxurypresence' || s === 'presence') return 'lp';
+  if(s === 'rechat') return 'rechat';
+  return '';
+}
+function sessionEmbeddable_(url){ return !!url && getEmbed(url).indexOf("Can't embed") === -1; }
+function sessionProblems_(list){
+  const out = [];
+  list.forEach(s => {
+    const name = 'row ' + s.row + (s.title ? ' (\u201c' + s.title + '\u201d)' : '');
+    if(!s.title) out.push(name + ' has no title');
+    else if(!s.url) out.push(name + ' has no link');
+    else if(!sessionPlatform_(s.platform)) out.push(name + ': the platform \u201c' + s.platform + '\u201d is not Luxury Presence or ReChat, so it is not shown');
+    else if(!sessionEmbeddable_(s.url)) out.push(name + ': that link cannot be played inside the page (use a Google Drive, Wistia or YouTube link)');
+  });
+  return out;
+}
+function sessionSideHtml_(key, label, logoB64, items){
+  const body = items.length ? items.map(s => `
+      <article class="ss-item">
+        <h2>${escapeHtml(s.title)}</h2>
+        <div class="ss-frame">${getEmbed(s.url)}</div>
+      </article>`).join('') : '<p class="ss-empty">New sessions are coming soon.</p>';
+  return `<section class="ss-side ss-${key}" aria-label="${label} recorded sessions">
+      <div class="ss-logo"><img alt="${label}" src="data:image/png;base64,${logoB64}"></div>${body}
+    </section>`;
+}
+async function renderSessionsPage(){
+  const main = document.getElementById('main');
+  main.innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+    <h1 class="page-title">Recorded Sessions</h1>
+    <p class="ss-intro">Trainings recorded specifically for 2CRRE. Watch them whenever you like.</p>
+    <div id="ssBody"><p class="ss-intro">Loading\u2026</p></div>
+    <div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => renderDirectory());
+  const body = document.getElementById('ssBody');
+  try{
+    const data = await loadSessions_();
+    const playable = data.sessions.filter(s => s.title && s.url);
+    const pick = key => playable.filter(s => sessionPlatform_(s.platform) === key);
+    body.innerHTML = `<div class="ss-split">${sessionSideHtml_('lp', 'Luxury Presence', LOGOS.lp, pick('lp'))}${sessionSideHtml_('rechat', 'ReChat', LOGOS.rechat, pick('rechat'))}</div>`;
+  }catch(e){
+    if(e instanceof AuthRequiredError) return;
+    body.innerHTML = '<p class="ss-intro">The sessions could not be loaded right now. Please reload the page.</p>';
+  }
+}
+function adminToolsHintHtml_(){
+  setTimeout(fillSessionsCheck_, 0);
+  return adminToolsHintBase_() + '<div id="sessionsCheck"></div>';
+}
+// Admin: say how many sessions each side has, and name any row that will not show (so a typo is never silent).
+async function fillSessionsCheck_(){
+  const el = document.getElementById('sessionsCheck');
+  if(!el) return;
+  try{
+    const data = await loadSessions_();
+    const count = key => data.sessions.filter(s => s.title && s.url && sessionPlatform_(s.platform) === key).length;
+    const problems = sessionProblems_(data.sessions);
+    const intro = !data.hasTab ? 'there is no Sessions tab yet. Run <code>setupSessionsTab</code> in Apps Script, or add a tab named Sessions with the columns Platform, Title and Video Link.'
+      : count('lp') + ' on Luxury Presence, ' + count('rechat') + ' on ReChat' + (problems.length ? '. Needs attention: ' + problems.map(escapeHtml).join('; ') : '.');
+    el.innerHTML = '<div class="quiz-check ' + (problems.length ? 'bad' : '') + '"><b>Recorded Sessions:</b> ' + intro + '</div>';
+  }catch(e){ el.innerHTML = ''; }
+}
+document.getElementById('headerSessionsBtn').addEventListener('click', () => renderSessionsPage());
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
