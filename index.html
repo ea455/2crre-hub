@@ -445,6 +445,10 @@
   .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
   .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .video-solo{ max-width:1040px; min-width:0; }
+  .video-solo .video-stack{ min-width:0; }
+  .video-solo .video-frame{ margin-bottom:0; }
+  .video-solo .broker-insight-box{ margin-top:28px; }
   .pane-hidden{ position:absolute; left:0; right:0; top:0; height:0; overflow:hidden; visibility:hidden; pointer-events:none; }
   .ss-poster{ position:absolute; inset:0; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:linear-gradient(160deg,#10343b,#061a1f); cursor:pointer; padding:0; border:0; }
   .ss-thumb{ position:absolute; inset:0; width:100%; height:100%; object-fit:cover; }
@@ -960,7 +964,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-27-E'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-10-28-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -3096,7 +3100,16 @@ function renderTopicPage(id){
   const calloutHtml = fStatus ? flagCalloutHtml_(t, fStatus) : '';
 
   let bodyHtml;
-  if(hasVideo){
+  // A lesson with a video and NO text: the video takes the whole width, already large (the same size the Expand button
+  // gives), instead of sitting in a third of the page next to an empty column. The Broker Insight and links go below it.
+  const videoOnly = hasVideo && id !== DIAGRAM_TOPIC_ID && !String(t['Page Content'] || '').trim();
+  if(videoOnly){
+    bodyHtml = `
+      <div class="video-solo">
+        <div class="video-stack">${renderVideoSection(t['Video Links'])}</div>
+        ${insightHtml}${linksHtml}
+      </div>`;
+  } else if(hasVideo){
     // The Broker Insight (and the reference/app links right after it) is
     // rendered twice \u2014 once after the video (desktop) and once after the
     // content (mobile) \u2014 with CSS toggling which copy shows. See the note
