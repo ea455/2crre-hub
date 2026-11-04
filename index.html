@@ -7986,6 +7986,7 @@ let boundaryEditFeatureGroup = null;
 let boundaryEditAreaName = null;   // the existing area being edited (null while drawing a new one)
 let boundaryEditIsNew = false;     // true while drawing a brand-new area
 let boundaryDotsLayer = null;
+let boundaryDotsRenderer = null;  // ONE canvas for the dots per map — creating a new one on every pan/zoom stacked a fresh full-size canvas on the map each time
 let boundaryDrawHandler = null;
 const BOUNDARY_DOTS_MAX = 6000;    // beyond this many dots in view, ask for a closer zoom instead of drawing a smear
 
@@ -8033,7 +8034,7 @@ async function refreshBoundaryDots() {
     note.textContent = `${inView.length.toLocaleString()} listings in view — zoom in to see the dots (up to ${BOUNDARY_DOTS_MAX.toLocaleString()} at a time).`;
     return;
   }
-  const renderer = L.canvas({ padding: 0.5 }); // canvas just for the dots; the editable shape stays on the default renderer it already worked with
+  const renderer = boundaryDotsRenderer; // canvas just for the dots; the editable shape stays on the default renderer it already worked with
   inView.forEach(({ r, lat, lng }) => {
     const color = STATUS_COLORS[statusGroup(r.status)] || CHART_COLORS.grey;
     const dot = L.circleMarker([lat, lng], { renderer, radius: 4, weight: 1, color: '#0b1d22', fillColor: color, fillOpacity: 0.9 });
@@ -8072,6 +8073,7 @@ function buildBoundaryMap(exceptAreaName) {
   neighbors.addTo(boundaryEditMap);
 
   boundaryDotsLayer = L.layerGroup().addTo(boundaryEditMap);
+  boundaryDotsRenderer = L.canvas({ padding: 0.5 });
   boundaryEditFeatureGroup = new L.FeatureGroup();
   boundaryEditMap.addLayer(boundaryEditFeatureGroup);
   boundaryEditMap.on('moveend', refreshBoundaryDots);
@@ -8084,6 +8086,7 @@ function closeBoundaryEditor() {
   boundaryDrawHandler = null;
   if (boundaryEditMap) { boundaryEditMap.remove(); boundaryEditMap = null; }
   boundaryDotsLayer = null;
+  boundaryDotsRenderer = null;
   document.getElementById('boundary-edit-map').style.display = 'none';
   document.getElementById('boundary-edit-actions').style.display = 'none';
   document.getElementById('boundary-new-area-row').style.display = 'none';
