@@ -1013,6 +1013,7 @@
 
   <div id="screen-admin" style="display:none">
     <button class="ghost back-link" id="btn-back-from-admin">← Back</button>
+    <p class="chart-hint" id="app-build" style="margin:6px 0 0; opacity:0.7;"></p>
     <p class="sub">A market intelligence report generated from an OMNI MLS CSV export — covering pricing, inventory, price/m², days on market, and listing activity, with a flagged review of anything that looks like a data error before it reaches the numbers.</p>
 
   <div class="area-tag-row">
@@ -7979,6 +7980,14 @@ function fetchAreaBoundariesFromRegistry() {
   return areaBoundariesFetchPromise;
 }
 fetchAreaBoundariesFromRegistry();
+
+// ---------- Build label (Admin) ----------
+// Shown under the Back button in Admin View so there's never a question about
+// which copy of the page is actually loaded — GitHub Pages and browsers both
+// cache, and an old copy looks identical to a new one until a feature is
+// missing. Bump this string whenever a new index.html is handed over.
+const APP_BUILD = '2026-11-04-b';
+document.getElementById('app-build').textContent = 'Build ' + APP_BUILD;
 
 // ---------- Admin: Edit Area Boundaries ----------
 let boundaryEditMap = null;
