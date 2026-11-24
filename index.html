@@ -964,7 +964,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-10-28-A'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-24-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1263,7 +1263,7 @@ function getEmbed(url){
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([\w-]+)/);
   const driveId = (driveFile && driveFile[1]) || (driveOpen && driveOpen[1]);
-  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen" allowfullscreen></iframe>`;
+  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen"${driveGuestAttr_()}></iframe>`;
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);">Can't embed \u2014 <a href="${url}" target="_blank" style="margin-left:6px;">open directly</a></div>`;
 }
 
@@ -2966,6 +2966,21 @@ function afterAppReady_(){
   const saver = navigator.connection && navigator.connection.saveData; // do not spend a data-saver phone's data
   if(!saver) setTimeout(() => { try{ if(currentAgent) ensurePane_('webinars'); }catch(e){} }, 1200);
 }
+
+
+// ================= Guests: personal accounts outside the company domains =================
+// A Drive video embedded in this page fails ("No se pudo cargar el video") when the viewer is signed in to Google with an
+// account that is not part of the company, even though the file is public: the player tries to use that account and is
+// refused. Opening the same file in a private window (no Google session) plays fine. So for guests the Drive player is loaded
+// "credentialless" (Chrome and Edge): without the guest's Google session, exactly like that private window. People on the
+// company accounts are not touched at all.
+const COMPANY_DOMAINS_ = ['2costaricarealestate.com', '2crpapagayo.com', '2crsantateresa.com']; // same list as ALLOWED_DOMAINS in Code.gs
+function isGuestAccount_(){
+  const email = (typeof currentAgent !== 'undefined' && currentAgent && currentAgent.email) ? String(currentAgent.email).toLowerCase() : '';
+  if(!email) return false;
+  return COMPANY_DOMAINS_.indexOf(email.split('@')[1]) === -1;
+}
+function driveGuestAttr_(){ return isGuestAccount_() ? ' credentialless' : ''; }
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
