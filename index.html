@@ -967,7 +967,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-11-24-C'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-24-D'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -2683,6 +2683,7 @@ function renderRenewalResult_(res){
 // ---- links in the emails (#certificate, #renew) ----
 function routeFromHash_(){
   const h = (location.hash || '').toLowerCase();
+  if(h === '#diag'){ renderDiagPage_(); return; }
   if(h === '#sessions'){ try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){} renderSessionsPage(); return; }
   if(!h || !myStatus || !myStatus.certificate) return;
   try{ history.replaceState(null, '', location.pathname + location.search); }catch(e){}
@@ -2992,20 +2993,46 @@ function driveGuestAttr_(){ return isGuestAccount_() ? ' credentialless' : ''; }
 // Reading from the Academy's server is safe to repeat, so a read that fails (a busy server, an error page instead of
 // data, a dropped connection, no answer within 20 seconds) is retried by itself, twice, a moment later. Only then does
 // the person see an error. Writes (saving progress) are never repeated blindly: they have their own checks.
+// What the browser gets back from the server is written down (this tab only, kept while the tab is open) so that a failing
+// request can be explained: which request, which status, and the words Google answered with. Open the address followed by
+// #diag to read it.
+const CONN_LOG_KEY = '2crre-connlog';
+function readConnLog_(){ try{ return JSON.parse(sessionStorage.getItem(CONN_LOG_KEY) || '[]'); }catch(e){ return []; } }
+function connLog_(entry){
+  try{
+    const arr = readConnLog_();
+    arr.push(Object.assign({ at: new Date().toISOString().slice(11, 19) }, entry));
+    sessionStorage.setItem(CONN_LOG_KEY, JSON.stringify(arr.slice(-40)));
+  }catch(e){}
+}
+function actionOf_(url){
+  const m = String(url).match(/[?&]action=([a-z]+)/i);
+  return m ? m[1] : (/[?&]deleted=1/.test(String(url)) ? 'deleted' : 'lessons');
+}
 async function fetchWithRetry_(realFetch, url, opts){
   const waits = [1200, 3000];
+  const action = actionOf_(url);
   let lastErr;
   for(let attempt = 0; attempt <= waits.length; attempt++){
     const ctl = new AbortController();
     const timer = setTimeout(() => ctl.abort(), 20000);
+    const t0 = Date.now();
     try{
       const res = await realFetch(url, Object.assign({}, opts, { signal: ctl.signal }));
       clearTimeout(timer);
       const type = String((res.headers && res.headers.get('content-type')) || '').toLowerCase();
-      if(res.ok && type.indexOf('json') !== -1) return res; // a real answer (even "please sign in") is handed back as it is
+      const ms = Date.now() - t0;
+      if(res.ok && type.indexOf('json') !== -1){
+        if(attempt > 0 || ms > 6000) connLog_({ request: action, attempt: attempt + 1, ok: true, ms: ms, note: attempt > 0 ? 'worked after a retry' : 'slow answer' });
+        return res; // a real answer (even "please sign in") is handed back as it is
+      }
+      let body = '';
+      try{ body = (await res.clone().text()).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }catch(e){}
+      connLog_({ request: action, attempt: attempt + 1, status: res.status, type: type.split(';')[0], ms: ms, body: body });
       lastErr = new Error('Unexpected answer from the server (' + res.status + ')');
     }catch(e){
       clearTimeout(timer);
+      connLog_({ request: action, attempt: attempt + 1, error: (e && e.name ? e.name : 'Error') + ': ' + (e && e.message ? e.message : String(e)), ms: Date.now() - t0 });
       lastErr = e;
     }
     if(attempt < waits.length) await new Promise(r => setTimeout(r, waits[attempt] + Math.random() * 400));
@@ -3037,9 +3064,36 @@ function startErrorDetail_(e){
   lines.push((e && e.name ? e.name : 'Error') + ': ' + (e && e.message ? e.message : String(e)));
   const where = String((e && e.stack) || '').split('\n').slice(1, 3).map(s => s.trim().replace(/https?:\/\/[^\s)]*\//g, '')).filter(Boolean).join(' | ');
   if(where) lines.push(where);
+  readConnLog_().slice(-4).forEach(x => lines.push('log ' + connLine_(x)));
   lines.push('build ' + (typeof BUILD_ID !== 'undefined' ? BUILD_ID : '?') + ' | ' + (currentAgent && currentAgent.email ? '@' + currentAgent.email.split('@')[1] : 'no sign-in') + ' | ' + new Date().toISOString().slice(11, 19) + ' UTC');
   return lines.join('\n');
 }
+
+
+// ================= #diag: what the browser got back from the server =================
+function connLine_(x){
+  const bits = [x.at, x.request, 'try ' + x.attempt];
+  if(x.ok) bits.push('OK', x.ms + ' ms', x.note || '');
+  else if(x.error) bits.push('ERROR ' + x.error, x.ms + ' ms');
+  else bits.push('HTTP ' + x.status, x.type || 'no type', x.ms + ' ms', x.body ? '\u201c' + x.body + '\u201d' : '');
+  return bits.filter(Boolean).join(' | ');
+}
+function renderDiagPage_(){
+  const main = document.getElementById('main');
+  const c = navigator.connection || {};
+  const head = ['build ' + (typeof BUILD_ID !== 'undefined' ? BUILD_ID : '?'), currentAgent && currentAgent.email ? '@' + currentAgent.email.split('@')[1] : 'not signed in', navigator.onLine ? 'online' : 'OFFLINE', (c.effectiveType || '') + (c.rtt ? ' rtt ' + c.rtt + ' ms' : ''), navigator.userAgent].filter(Boolean).join('\n');
+  const log = readConnLog_();
+  main.innerHTML = `
+    <button class="back" id="backBtn">\u2190 Back to all topics</button>
+    <h1 class="page-title">Connection log</h1>
+    <p class="ss-intro" style="max-width:640px">Every request that failed or was slow in this tab, and what the server answered. Send a screenshot of this page if something does not load.</p>
+    <pre class="loading-detail" style="margin:0 0 20px;max-width:none;padding:0;" id="diagText">${escapeHtml(head + '\n\n' + (log.length ? log.map(connLine_).join('\n') : 'Nothing has failed or been slow in this tab.'))}</pre>
+    <button type="button" class="cert-btn" id="diagClear">Clear</button>
+    <div class="footer-space"></div>`;
+  document.getElementById('backBtn').addEventListener('click', () => { history.replaceState(null, '', location.pathname + location.search); renderDirectory(); });
+  document.getElementById('diagClear').addEventListener('click', () => { try{ sessionStorage.removeItem(CONN_LOG_KEY); }catch(e){} renderDiagPage_(); });
+}
+window.addEventListener('hashchange', () => { if((location.hash || '').toLowerCase() === '#diag' && currentAgent) renderDiagPage_(); });
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
