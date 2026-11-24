@@ -810,10 +810,9 @@ let currentAgent = null; // { email, name, idToken } once signed in
 class AuthRequiredError extends Error {}
 function sessionParam_(){ return currentAgent ? encodeURIComponent(currentAgent.idToken) : ''; }
 
-async function loadProgress(){
+async function loadProgress(preloaded){
   if(!currentAgent) return;
-  const res = await fetch(APPS_SCRIPT_URL + '?action=progress&session=' + sessionParam_());
-  const data = await res.json();
+  const data = preloaded || await (await fetch(APPS_SCRIPT_URL + '?action=progress&session=' + sessionParam_())).json();
   if(data && data.authRequired){
     requireSignInAgain_('Please sign in to continue.');
     throw new AuthRequiredError();
@@ -967,7 +966,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-11-24-D'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-24-E'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1144,9 +1143,8 @@ function categoriesInSheetOrder_(topics){
   topics.forEach(t => { if(CATEGORY_NAMES.indexOf(t.Category) !== -1 && seen.indexOf(t.Category) === -1) seen.push(t.Category); });
   return seen.concat(CATEGORY_NAMES.filter(c => seen.indexOf(c) === -1));
 }
-async function loadTopicsFromSheet(){
-  const res = await fetch(APPS_SCRIPT_URL + '?session=' + sessionParam_());
-  const data = await res.json();
+async function loadTopicsFromSheet(preloaded){
+  const data = preloaded || await (await fetch(APPS_SCRIPT_URL + '?session=' + sessionParam_())).json();
   if(data && data.authRequired){
     requireSignInAgain_('Please sign in to continue.');
     throw new AuthRequiredError();
@@ -2207,11 +2205,10 @@ let myStatus = null;
 let statusError_ = ''; // what the server said when the status could not be loaded (shown to admins)
 let backendIsOld_ = false; // true when the Apps Script behind the Academy is still the version without certificates
 
-async function loadStatus(){
+async function loadStatus(preloaded){
   if(!currentAgent) return;
   try{
-    const res = await fetch(APPS_SCRIPT_URL + '?action=status&session=' + sessionParam_());
-    const d = await res.json();
+    const d = preloaded || await (await fetch(APPS_SCRIPT_URL + '?action=status&session=' + sessionParam_())).json();
     if(d && d.authRequired){ requireSignInAgain_('Please sign in to continue.'); throw new AuthRequiredError(); }
     // An old backend ignores ?action=status and sends the lesson list instead.
     backendIsOld_ = !!(d && d.ok && Array.isArray(d.topics));
@@ -2968,7 +2965,7 @@ function showPane_(name){
 // Whenever any other page is drawn into the main area, a revealed pane steps aside.
 new MutationObserver(() => hidePanes_()).observe(document.getElementById('main'), { childList: true });
 function afterAppReady_(){
-  refreshSessions_().catch(() => {});
+  if(!SESSIONS_CACHE_) refreshSessions_().catch(() => {}); // (the one start-up request already brought them)
   const saver = navigator.connection && navigator.connection.saveData; // do not spend a data-saver phone's data
   if(!saver) setTimeout(() => { try{ if(currentAgent) ensurePane_('webinars'); }catch(e){} }, 1200);
 }
@@ -3009,35 +3006,59 @@ function actionOf_(url){
   const m = String(url).match(/[?&]action=([a-z]+)/i);
   return m ? m[1] : (/[?&]deleted=1/.test(String(url)) ? 'deleted' : 'lessons');
 }
+// Reading from the server is safe to repeat. Two things can go wrong, and they are handled differently:
+//  - an attempt that FAILS (an error page, a dropped connection) is retried after a short pause (1.2 s, then 3 s);
+//  - an attempt that gets NO ANSWER at all (it happens now and then: the request just hangs, and the same request sent again
+//    is answered in about 2 seconds) is not waited for. After 6 seconds another identical attempt starts ALONGSIDE it, and
+//    whichever answers first wins. At most 3 attempts, and the person is told something is wrong after 26 seconds at most.
 async function fetchWithRetry_(realFetch, url, opts){
-  const waits = [1200, 3000];
   const action = actionOf_(url);
-  let lastErr;
-  for(let attempt = 0; attempt <= waits.length; attempt++){
-    const ctl = new AbortController();
-    const timer = setTimeout(() => ctl.abort(), 20000);
-    const t0 = Date.now();
-    try{
-      const res = await realFetch(url, Object.assign({}, opts, { signal: ctl.signal }));
-      clearTimeout(timer);
-      const type = String((res.headers && res.headers.get('content-type')) || '').toLowerCase();
-      const ms = Date.now() - t0;
-      if(res.ok && type.indexOf('json') !== -1){
-        if(attempt > 0 || ms > 6000) connLog_({ request: action, attempt: attempt + 1, ok: true, ms: ms, note: attempt > 0 ? 'worked after a retry' : 'slow answer' });
-        return res; // a real answer (even "please sign in") is handed back as it is
-      }
-      let body = '';
-      try{ body = (await res.clone().text()).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }catch(e){}
-      connLog_({ request: action, attempt: attempt + 1, status: res.status, type: type.split(';')[0], ms: ms, body: body });
-      lastErr = new Error('Unexpected answer from the server (' + res.status + ')');
-    }catch(e){
-      clearTimeout(timer);
-      connLog_({ request: action, attempt: attempt + 1, error: (e && e.name ? e.name : 'Error') + ': ' + (e && e.message ? e.message : String(e)), ms: Date.now() - t0 });
-      lastErr = e;
+  const BACKOFF = [1200, 3000], HEDGE_AFTER = 6000, GIVE_UP = 26000;
+  return new Promise((resolve, reject) => {
+    let settled = false, started = 0, failed = 0, lastErr = null, nextTimer = null;
+    const cap = new AbortController();
+    const giveUp = setTimeout(() => done(reject, lastErr || new Error('The server did not answer in time')), GIVE_UP);
+    function done(fn, v){
+      if(settled) return;
+      settled = true; clearTimeout(nextTimer); clearTimeout(giveUp);
+      if(fn === reject) cap.abort();
+      fn(v);
     }
-    if(attempt < waits.length) await new Promise(r => setTimeout(r, waits[attempt] + Math.random() * 400));
-  }
-  throw lastErr;
+    function launch(){
+      if(settled || started >= 3) return;
+      const n = ++started, t0 = Date.now();
+      clearTimeout(nextTimer);
+      if(started < 3){
+        nextTimer = setTimeout(() => {
+          if(settled) return;
+          connLog_({ request: action, attempt: n, ms: Date.now() - t0, note: 'no answer after ' + (HEDGE_AFTER / 1000) + ' s, trying again alongside' });
+          launch();
+        }, HEDGE_AFTER);
+      }
+      const onFail = (entry, err) => {
+        if(settled) return;
+        connLog_(Object.assign({ request: action, attempt: n, ms: Date.now() - t0 }, entry));
+        lastErr = err; failed++;
+        if(started >= 3 && failed >= started){ done(reject, lastErr); return; }
+        if(started < 3){ clearTimeout(nextTimer); nextTimer = setTimeout(launch, BACKOFF[Math.min(failed - 1, BACKOFF.length - 1)] + Math.random() * 400); }
+      };
+      realFetch(url, Object.assign({}, opts, { signal: cap.signal })).then(async res => {
+        if(settled) return;
+        const type = String((res.headers && res.headers.get('content-type')) || '').toLowerCase(), ms = Date.now() - t0;
+        if(res.ok && type.indexOf('json') !== -1){
+          if(n > 1 || ms > 6000) connLog_({ request: action, attempt: n, ok: true, ms: ms, note: n > 1 ? 'worked after a retry' : 'slow answer' });
+          done(resolve, res); // a real answer (even "please sign in") is handed back as it is
+          return;
+        }
+        let body = '';
+        try{ body = (await res.clone().text()).replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 160); }catch(e){}
+        onFail({ status: res.status, type: type.split(';')[0], body: body }, new Error('Unexpected answer from the server (' + res.status + ')'));
+      }).catch(e => {
+        onFail({ error: (e && e.name ? e.name : 'Error') + ': ' + (e && e.message ? e.message : String(e)) }, e);
+      });
+    }
+    launch();
+  });
 }
 (function(){
   const realFetch = window.fetch.bind(window);
@@ -3074,6 +3095,7 @@ function startErrorDetail_(e){
 function connLine_(x){
   const bits = [x.at, x.request, 'try ' + x.attempt];
   if(x.ok) bits.push('OK', x.ms + ' ms', x.note || '');
+  else if(x.note && x.status === undefined && !x.error) bits.push(x.note, x.ms + ' ms');
   else if(x.error) bits.push('ERROR ' + x.error, x.ms + ' ms');
   else bits.push('HTTP ' + x.status, x.type || 'no type', x.ms + ' ms', x.body ? '\u201c' + x.body + '\u201d' : '');
   return bits.filter(Boolean).join(' | ');
@@ -3094,6 +3116,23 @@ function renderDiagPage_(){
   document.getElementById('diagClear').addEventListener('click', () => { try{ sessionStorage.removeItem(CONN_LOG_KEY); }catch(e){} renderDiagPage_(); });
 }
 window.addEventListener('hashchange', () => { if((location.hash || '').toLowerCase() === '#diag' && currentAgent) renderDiagPage_(); });
+
+
+// ================= One request to open the app =================
+// Lessons, this person's progress, their certificate status and the recorded sessions come in ONE answer ("boot"): one run
+// of the script instead of four, and four times fewer chances of a request that hangs. An older server that does not know
+// "boot" answers with the lesson list: that is used as it is and the rest is asked for the usual way.
+async function tryBoot_(){
+  const res = await fetch(APPS_SCRIPT_URL + '?action=boot&session=' + sessionParam_());
+  const data = await res.json();
+  if(data && data.authRequired){ requireSignInAgain_('Please sign in to continue.'); throw new AuthRequiredError(); }
+  if(data && data.boot === true && data.lessons){
+    if(data.sessions && data.sessions.ok) SESSIONS_CACHE_ = data.sessions;
+    return data;
+  }
+  if(data && data.ok && Array.isArray(data.topics)) return { lessons: data };
+  return null;
+}
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
@@ -3807,9 +3846,11 @@ async function startApp(){
     setLoadingStage_(1);
     // The lessons and this person's progress don't depend on each other, so ask for both at once.
     startTrace_ = { t0: Date.now(), lines: [] };
-    const topicsReady = startStep_('lessons', loadTopicsFromSheet()).then(() => setLoadingStage_(2));
+    // One request for everything. If it cannot be answered (an older server, or a failure) the three are asked for separately, as before.
+    const boot = await startStep_('boot', tryBoot_()).catch(e => { if(e instanceof AuthRequiredError) throw e; return null; });
+    const topicsReady = startStep_('lessons', loadTopicsFromSheet(boot && boot.lessons)).then(() => setLoadingStage_(2));
     // Wait for all three to finish (or fail), so the error screen can say what happened to each one.
-    const settled = await Promise.allSettled([topicsReady, startStep_('progress', loadProgress()), startStep_('status', loadStatus())]);
+    const settled = await Promise.allSettled([topicsReady, startStep_('progress', loadProgress(boot && boot.progress)), startStep_('status', loadStatus(boot && boot.status))]);
     const failed = settled.find(r => r.status === 'rejected');
     if(failed) throw failed.reason;
     if(pendingSave_){
