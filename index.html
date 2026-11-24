@@ -445,6 +445,8 @@
   .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
   .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .loading-detail{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; line-height:1.55; color:var(--ink-muted); max-width:620px; margin:12px auto 0; padding:0 18px; white-space:pre-wrap; word-break:break-word; text-align:left; user-select:text; opacity:0.9; }
+  .loading-detail:empty{ display:none; }
   .video-solo{ max-width:1040px; min-width:0; }
   .video-solo .video-stack{ min-width:0; }
   .video-solo .video-frame{ margin-bottom:0; }
@@ -644,6 +646,7 @@
   </div>
   <div class="loading-error hidden" id="loadingError">
     <p>Something went wrong loading the Academy.</p>
+    <p class="loading-detail" id="loadingDetail"></p>
     <button type="button" id="loadingRetryBtn">Try again</button>
   </div>
 </div>
@@ -964,7 +967,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-11-24-R'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-24-C'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1023,7 +1026,9 @@ function setLoadingStage_(stage){
   if(fill) fill.style.width = LOADING_STAGE_PERCENTS[stage] + '%';
 }
 
-function showLoadingError_(){
+function showLoadingError_(detail){
+  const dEl = document.getElementById('loadingDetail');
+  if(dEl) dEl.textContent = detail || '';
   document.getElementById('loadingBarTrack').classList.add('hidden');
   document.getElementById('loadingLogo').style.animationPlayState = 'paused';
   document.getElementById('loadingError').classList.remove('hidden');
@@ -1263,7 +1268,7 @@ function getEmbed(url){
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([\w-]+)/);
   const driveId = (driveFile && driveFile[1]) || (driveOpen && driveOpen[1]);
-  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen"></iframe>`;
+  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen"${driveGuestAttr_()}></iframe>`;
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);">Can't embed \u2014 <a href="${url}" target="_blank" style="margin-left:6px;">open directly</a></div>`;
 }
 
@@ -3015,6 +3020,26 @@ async function fetchWithRetry_(realFetch, url, opts){
     return fetchWithRetry_(realFetch, url, opts);
   };
 })();
+
+
+// ================= When loading fails, say what failed =================
+let startTrace_ = null;
+function startStep_(name, promise){
+  const t = startTrace_;
+  const secs = () => ((Date.now() - t.t0) / 1000).toFixed(1) + ' s';
+  return promise.then(
+    v => { t.lines.push(name + ': ok (' + secs() + ')'); return v; },
+    err => { t.lines.push(name + ': FAILED after ' + secs() + ': ' + (err && err.message ? err.message : String(err))); throw err; }
+  );
+}
+function startErrorDetail_(e){
+  const lines = startTrace_ ? startTrace_.lines.slice() : [];
+  lines.push((e && e.name ? e.name : 'Error') + ': ' + (e && e.message ? e.message : String(e)));
+  const where = String((e && e.stack) || '').split('\n').slice(1, 3).map(s => s.trim().replace(/https?:\/\/[^\s)]*\//g, '')).filter(Boolean).join(' | ');
+  if(where) lines.push(where);
+  lines.push('build ' + (typeof BUILD_ID !== 'undefined' ? BUILD_ID : '?') + ' | ' + (currentAgent && currentAgent.email ? '@' + currentAgent.email.split('@')[1] : 'no sign-in') + ' | ' + new Date().toISOString().slice(11, 19) + ' UTC');
+  return lines.join('\n');
+}
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
@@ -3727,8 +3752,12 @@ async function startApp(){
   try{
     setLoadingStage_(1);
     // The lessons and this person's progress don't depend on each other, so ask for both at once.
-    const topicsReady = loadTopicsFromSheet().then(() => setLoadingStage_(2));
-    await Promise.all([topicsReady, loadProgress(), loadStatus()]);
+    startTrace_ = { t0: Date.now(), lines: [] };
+    const topicsReady = startStep_('lessons', loadTopicsFromSheet()).then(() => setLoadingStage_(2));
+    // Wait for all three to finish (or fail), so the error screen can say what happened to each one.
+    const settled = await Promise.allSettled([topicsReady, startStep_('progress', loadProgress()), startStep_('status', loadStatus())]);
+    const failed = settled.find(r => r.status === 'rejected');
+    if(failed) throw failed.reason;
     if(pendingSave_){
       const p = pendingSave_;
       pendingSave_ = null;
@@ -3748,7 +3777,7 @@ async function startApp(){
     // that pulses forever with no explanation.
     if(e instanceof AuthRequiredError) return; // the sign-in screen is already showing
     console.error('startApp failed', e);
-    showLoadingError_();
+    showLoadingError_(startErrorDetail_(e));
     return; // leave the loading screen up, now showing the error state,
             // instead of hiding it onto a half-broken page
   }
