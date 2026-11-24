@@ -964,7 +964,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-11-24-A'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-24-R'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1263,7 +1263,7 @@ function getEmbed(url){
   const driveFile = url.match(/drive\.google\.com\/file\/d\/([\w-]+)/);
   const driveOpen = url.match(/drive\.google\.com\/open\?id=([\w-]+)/);
   const driveId = (driveFile && driveFile[1]) || (driveOpen && driveOpen[1]);
-  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen"${driveGuestAttr_()}></iframe>`;
+  if(driveId) return `<iframe src="https://drive.google.com/file/d/${driveId}/preview" allow="autoplay; fullscreen"></iframe>`;
   return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;color:var(--ink-muted);">Can't embed \u2014 <a href="${url}" target="_blank" style="margin-left:6px;">open directly</a></div>`;
 }
 
@@ -2981,6 +2981,40 @@ function isGuestAccount_(){
   return COMPANY_DOMAINS_.indexOf(email.split('@')[1]) === -1;
 }
 function driveGuestAttr_(){ return isGuestAccount_() ? ' credentialless' : ''; }
+
+
+// ================= A slow or failing server must not leave people stuck =================
+// Reading from the Academy's server is safe to repeat, so a read that fails (a busy server, an error page instead of
+// data, a dropped connection, no answer within 20 seconds) is retried by itself, twice, a moment later. Only then does
+// the person see an error. Writes (saving progress) are never repeated blindly: they have their own checks.
+async function fetchWithRetry_(realFetch, url, opts){
+  const waits = [1200, 3000];
+  let lastErr;
+  for(let attempt = 0; attempt <= waits.length; attempt++){
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), 20000);
+    try{
+      const res = await realFetch(url, Object.assign({}, opts, { signal: ctl.signal }));
+      clearTimeout(timer);
+      const type = String((res.headers && res.headers.get('content-type')) || '').toLowerCase();
+      if(res.ok && type.indexOf('json') !== -1) return res; // a real answer (even "please sign in") is handed back as it is
+      lastErr = new Error('Unexpected answer from the server (' + res.status + ')');
+    }catch(e){
+      clearTimeout(timer);
+      lastErr = e;
+    }
+    if(attempt < waits.length) await new Promise(r => setTimeout(r, waits[attempt] + Math.random() * 400));
+  }
+  throw lastErr;
+}
+(function(){
+  const realFetch = window.fetch.bind(window);
+  window.fetch = function(url, opts){
+    const isGet = !opts || !opts.method || String(opts.method).toUpperCase() === 'GET';
+    if(!isGet || String(url).indexOf(APPS_SCRIPT_URL) !== 0) return realFetch(url, opts);
+    return fetchWithRetry_(realFetch, url, opts);
+  };
+})();
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
