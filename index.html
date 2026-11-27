@@ -445,6 +445,7 @@
   .ss-frame{ position:relative; aspect-ratio:16/9; border-radius:12px; overflow:hidden; background:#000; }
   .ss-frame iframe{ position:absolute; inset:0; width:100%; height:100%; border:0; }
   .ss-lp .ss-frame{ box-shadow:0 10px 30px rgba(13,42,50,0.2); }
+  .loading-note{ color:var(--ink-muted); font-size:0.9rem; line-height:1.5; margin:18px auto 0; max-width:380px; text-align:center; min-height:1.4em; padding:0 18px; }
   .loading-detail{ font-family:'IBM Plex Mono',monospace; font-size:0.72rem; line-height:1.55; color:var(--ink-muted); max-width:620px; margin:12px auto 0; padding:0 18px; white-space:pre-wrap; word-break:break-word; text-align:left; user-select:text; opacity:0.9; }
   .loading-detail:empty{ display:none; }
   .video-solo{ max-width:1040px; min-width:0; }
@@ -644,6 +645,7 @@
   <div class="loading-bar-track" id="loadingBarTrack">
     <div class="loading-bar-fill" id="loadingBarFill"></div>
   </div>
+  <p class="loading-note" id="loadingNote"></p>
   <div class="loading-error hidden" id="loadingError">
     <p>Something went wrong loading the Academy.</p>
     <p class="loading-detail" id="loadingDetail"></p>
@@ -966,7 +968,7 @@ function nextIncomplete(){
   return SEQUENCE.find(t => !progress[t.ID]) || null;
 }
 
-const BUILD_ID = '2026-11-24-E'; // bump on every release; shown in Admin
+const BUILD_ID = '2026-11-26-A'; // bump on every release; shown in Admin
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyZKFHJ8fdF9xQkmOIp58iS3SAJZDzZm1G9zyWjgCSycMJLF4Lw8b8b-4iuaV7GT3Lb/exec';
 
 // ===== Google Sign-In =====
@@ -1042,6 +1044,7 @@ async function handleGoogleCredential_(response){
   showSigninError_('');
   document.getElementById('signinGate').classList.add('hidden');
   showLoadingScreen_();
+  document.getElementById('loadingBarFill').style.width = '5%'; // already moving while the server confirms the sign-in
   let result = null;
   try{
     const res = await fetch(APPS_SCRIPT_URL, {
@@ -2013,7 +2016,7 @@ function renderResults(filterText){
   // a lesson added earlier in the order is open too but never pushes anyone back.
   const frontier = lockFrontier_();
   const isLocked = t => {
-    if(!LOCK_ENABLED || (currentAgent && currentAgent.admin) || progress[t.ID]) return false;
+    if(!LOCK_ENABLED || (currentAgent && currentAgent.admin) || hasFullAccess_() || progress[t.ID]) return false;
     return SEQUENCE.findIndex(s => s.ID === t.ID) > frontier + 1;
   };
 
@@ -3002,20 +3005,26 @@ function connLog_(entry){
     sessionStorage.setItem(CONN_LOG_KEY, JSON.stringify(arr.slice(-40)));
   }catch(e){}
 }
-function actionOf_(url){
+function actionOf_(url, opts){
   const m = String(url).match(/[?&]action=([a-z]+)/i);
-  return m ? m[1] : (/[?&]deleted=1/.test(String(url)) ? 'deleted' : 'lessons');
+  if(m) return m[1];
+  const b = opts && typeof opts.body === 'string' ? opts.body.match(/"action":"([A-Za-z]+)"/) : null;
+  if(b) return b[1];
+  return /[?&]deleted=1/.test(String(url)) ? 'deleted' : 'lessons';
 }
 // Reading from the server is safe to repeat. Two things can go wrong, and they are handled differently:
 //  - an attempt that FAILS (an error page, a dropped connection) is retried after a short pause (1.2 s, then 3 s);
 //  - an attempt that gets NO ANSWER at all (it happens now and then: the request just hangs, and the same request sent again
 //    is answered in about 2 seconds) is not waited for. After 6 seconds another identical attempt starts ALONGSIDE it, and
-//    whichever answers first wins. At most 3 attempts, and the person is told something is wrong after 26 seconds at most.
+//    whichever answers first wins. Only ONE extra attempt is ever started alongside (more would only load the server further
+//    and make everything slower), later for the heavy requests (the start-up one does the work of four). At most 3 attempts in
+//    all, and the person is told something is wrong after 26 seconds (45 for the heavy requests) at most.
 async function fetchWithRetry_(realFetch, url, opts){
-  const action = actionOf_(url);
-  const BACKOFF = [1200, 3000], HEDGE_AFTER = 6000, GIVE_UP = 26000;
+  const action = actionOf_(url, opts);
+  const heavy = action === 'boot' || action === 'lessons';
+  const BACKOFF = [1200, 3000], HEDGE_AFTER = heavy ? 10000 : 6000, GIVE_UP = heavy ? 45000 : 26000;
   return new Promise((resolve, reject) => {
-    let settled = false, started = 0, failed = 0, lastErr = null, nextTimer = null;
+    let settled = false, started = 0, failed = 0, lastErr = null, nextTimer = null, hedged = false;
     const cap = new AbortController();
     const giveUp = setTimeout(() => done(reject, lastErr || new Error('The server did not answer in time')), GIVE_UP);
     function done(fn, v){
@@ -3028,9 +3037,10 @@ async function fetchWithRetry_(realFetch, url, opts){
       if(settled || started >= 3) return;
       const n = ++started, t0 = Date.now();
       clearTimeout(nextTimer);
-      if(started < 3){
+      if(started < 3 && !hedged){
         nextTimer = setTimeout(() => {
           if(settled) return;
+          hedged = true;
           connLog_({ request: action, attempt: n, ms: Date.now() - t0, note: 'no answer after ' + (HEDGE_AFTER / 1000) + ' s, trying again alongside' });
           launch();
         }, HEDGE_AFTER);
@@ -3064,7 +3074,10 @@ async function fetchWithRetry_(realFetch, url, opts){
   const realFetch = window.fetch.bind(window);
   window.fetch = function(url, opts){
     const isGet = !opts || !opts.method || String(opts.method).toUpperCase() === 'GET';
-    if(!isGet || String(url).indexOf(APPS_SCRIPT_URL) !== 0) return realFetch(url, opts);
+    // Signing in only checks Google's token and hands back a session: it writes nothing, so asking twice is harmless.
+    // Every other request that WRITES (saving progress, the Admin saves...) is never repeated automatically.
+    const signingIn = !isGet && opts && typeof opts.body === 'string' && opts.body.indexOf('"action":"startSession"') !== -1;
+    if(!(isGet || signingIn) || String(url).indexOf(APPS_SCRIPT_URL) !== 0) return realFetch(url, opts);
     return fetchWithRetry_(realFetch, url, opts);
   };
 })();
@@ -3133,6 +3146,30 @@ async function tryBoot_(){
   if(data && data.ok && Array.isArray(data.topics)) return { lessons: data };
   return null;
 }
+
+
+// ================= A calm note when loading takes longer than usual =================
+let slowNoteTimer_ = null;
+function clearSlowNote_(){ clearTimeout(slowNoteTimer_); const n = document.getElementById('loadingNote'); if(n) n.textContent = ''; }
+function armSlowNote_(){
+  clearSlowNote_();
+  slowNoteTimer_ = setTimeout(() => {
+    const n = document.getElementById('loadingNote');
+    if(n) n.textContent = 'Still connecting\u2026 the first load can take a little longer. Please keep this page open.';
+  }, 9000);
+}
+(function(){
+  const show = showLoadingScreen_, hide = hideLoadingScreenWithFade_, err = showLoadingError_;
+  showLoadingScreen_ = function(){ const r = show.apply(this, arguments); armSlowNote_(); return r; };
+  hideLoadingScreenWithFade_ = function(){ clearSlowNote_(); return hide.apply(this, arguments); };
+  showLoadingError_ = function(){ clearSlowNote_(); return err.apply(this, arguments); };
+})();
+
+
+// ================= Full access =================
+// Agents already on the team ("Full Access" = Y in the roster) can open every lesson from the first day. New agents learn step
+// by step. Unless the server says so, the step-by-step rule applies (an older server, or a status that could not be loaded).
+function hasFullAccess_(){ return !!(myStatus && myStatus.fullAccess === true); }
 const quizMissesById_ = {}; // wrong picks so far, per lesson, until that lesson is completed
 function stopReadAloud_(){
   try{ if('speechSynthesis' in window) window.speechSynthesis.cancel(); }catch(e){}
